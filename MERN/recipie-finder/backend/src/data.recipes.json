@@ -1,0 +1,237 @@
+[
+  {
+    "title": "Paneer Butter Masala",
+    "description": "Creamy and mildly spiced North Indian curry with paneer.",
+    "instructions": "Saute onions, grind to paste, cook with tomato puree, add spices and cream, finish with paneer.",
+    "cuisine": "Indian",
+    "category": "Main Course",
+    "createdByAdmin": null,
+    "ingredients": [
+      { "name": "Paneer", "qty": 200, "unit": "grams", "notes": "cubed" },
+      { "name": "Tomato Puree", "qty": 1, "unit": "cup" },
+      { "name": "Cream", "qty": 0.5, "unit": "cup" },
+      { "name": "Butter", "qty": 2, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Chicken Biryani",
+    "description": "Aromatic layered rice dish cooked with marinated chicken.",
+    "instructions": "Marinate chicken, half-cook rice, layer with fried onions & spices, dum cook.",
+    "cuisine": "Indian",
+    "category": "Main Course",
+    "createdByAdmin": null,
+    "ingredients": [
+      { "name": "Basmati Rice", "qty": 2, "unit": "cups" },
+      { "name": "Chicken", "qty": 500, "unit": "grams" },
+      { "name": "Yogurt", "qty": 0.5, "unit": "cup" },
+      { "name": "Biryani Masala", "qty": 2, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Masala Dosa",
+    "description": "Crispy rice–lentil crepes with spiced potato filling.",
+    "instructions": "Prepare batter, ferment, spread dosa, fill with potato masala.",
+    "cuisine": "Indian",
+    "category": "Breakfast",
+    "ingredients": [
+      { "name": "Rice", "qty": 2, "unit": "cups" },
+      { "name": "Urad Dal", "qty": 1, "unit": "cup" },
+      { "name": "Potatoes", "qty": 3, "unit": "pcs" }
+    ]
+  },
+  {
+    "title": "Veg Fried Rice",
+    "description": "Quick Indo-Chinese stir-fried rice with vegetables.",
+    "instructions": "Stir fry veggies, add cooked rice, season with soy sauce.",
+    "cuisine": "Indo-Chinese",
+    "category": "Main Course",
+    "ingredients": [
+      { "name": "Cooked Rice", "qty": 3, "unit": "cups" },
+      { "name": "Carrot", "qty": 1, "unit": "cup", "notes": "chopped" },
+      { "name": "Soy Sauce", "qty": 1, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Pasta Alfredo",
+    "description": "Creamy Italian pasta with parmesan sauce.",
+    "instructions": "Boil pasta, cook cream-garlic sauce, mix and finish with cheese.",
+    "cuisine": "Italian",
+    "category": "Main Course",
+    "createdByAdmin": null,
+    "ingredients": [
+      { "name": "Pasta", "qty": 250, "unit": "grams" },
+      { "name": "Cream", "qty": 1, "unit": "cup" },
+      { "name": "Parmesan", "qty": 0.5, "unit": "cup" }
+    ]
+  },
+  {
+    "title": "Garlic Bread",
+    "description": "Toasted bread with garlic butter and herbs.",
+    "instructions": "Spread garlic butter, toast in oven.",
+    "cuisine": "Italian",
+    "category": "Sides",
+    "ingredients": [
+      { "name": "Bread", "qty": 6, "unit": "slices" },
+      { "name": "Garlic", "qty": 4, "unit": "cloves" }
+    ]
+  },
+  {
+    "title": "Chocolate Brownies",
+    "description": "Rich fudgy brownies with cocoa flavor.",
+    "instructions": "Mix wet and dry ingredients, bake 25 mins.",
+    "cuisine": "American",
+    "category": "Dessert",
+    "ingredients": [
+      { "name": "Cocoa Powder", "qty": 0.5, "unit": "cup" },
+      { "name": "Flour", "qty": 1, "unit": "cup" },
+      { "name": "Butter", "qty": 100, "unit": "grams" }
+    ]
+  },
+  {
+    "title": "Pav Bhaji",
+    "description": "Mumbai-style mashed vegetable curry served with buttered pav.",
+    "instructions": "Cook veggies, mash with spices, serve with toasted pav.",
+    "cuisine": "Indian",
+    "category": "Street Food",
+    "ingredients": [
+      { "name": "Potatoes", "qty": 3, "unit": "pcs" },
+      { "name": "Butter", "qty": 2, "unit": "tbsp" },
+      { "name": "Pav Bhaji Masala", "qty": 1, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Hakka Noodles",
+    "description": "Classic Indo-Chinese stir-fried noodles.",
+    "instructions": "Boil noodles, stir fry vegetables, mix sauces.",
+    "cuisine": "Indo-Chinese",
+    "category": "Main Course",
+    "ingredients": [
+      { "name": "Noodles", "qty": 200, "unit": "grams" },
+      { "name": "Bell Peppers", "qty": 1, "unit": "cup" },
+      { "name": "Soy Sauce", "qty": 2, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Veg Pulao",
+    "description": "Aromatic basmati rice cooked with vegetables.",
+    "instructions": "Saute spices, add vegetables & rice, cook on low flame.",
+    "cuisine": "Indian",
+    "category": "Main Course",
+    "ingredients": [
+      { "name": "Basmati Rice", "qty": 1.5, "unit": "cups" },
+      { "name": "Carrot", "qty": 1, "unit": "cup" },
+      { "name": "Peas", "qty": 0.5, "unit": "cup" }
+    ]
+  },
+  {
+    "title": "Dal Tadka",
+    "description": "Yellow lentils cooked with a spicy ghee tempering.",
+    "instructions": "Cook dal, add ghee tadka with garlic & spices.",
+    "cuisine": "Indian",
+    "category": "Main Course",
+    "ingredients": [
+      { "name": "Toor Dal", "qty": 1, "unit": "cup" },
+      { "name": "Garlic", "qty": 5, "unit": "cloves" }
+    ]
+  },
+  {
+    "title": "Egg Curry",
+    "description": "Boiled eggs simmered in onion-tomato gravy.",
+    "instructions": "Cook masala, add eggs, simmer 10 mins.",
+    "cuisine": "Indian",
+    "category": "Main Course",
+    "ingredients": [
+      { "name": "Eggs", "qty": 4, "unit": "pcs" },
+      { "name": "Onion", "qty": 1, "unit": "cup" }
+    ]
+  },
+  {
+    "title": "Aloo Paratha",
+    "description": "Stuffed wheat flatbread with spiced potato filling.",
+    "instructions": "Prepare dough, cook stuffed parathas.",
+    "cuisine": "Indian",
+    "category": "Breakfast",
+    "ingredients": [
+      { "name": "Potatoes", "qty": 2, "unit": "pcs" },
+      { "name": "Wheat Flour", "qty": 2, "unit": "cups" }
+    ]
+  },
+  {
+    "title": "Chole",
+    "description": "Spicy Punjabi chickpea curry.",
+    "instructions": "Pressure cook chole, add masala paste.",
+    "cuisine": "Indian",
+    "category": "Main Course",
+    "ingredients": [
+      { "name": "Chickpeas", "qty": 1, "unit": "cup" },
+      { "name": "Chole Masala", "qty": 1, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Tomato Soup",
+    "description": "Creamy blended tomato soup.",
+    "instructions": "Boil tomatoes, blend, simmer with cream.",
+    "cuisine": "Continental",
+    "category": "Soup",
+    "ingredients": [
+      { "name": "Tomatoes", "qty": 4, "unit": "pcs" },
+      { "name": "Cream", "qty": 0.25, "unit": "cup" }
+    ]
+  },
+  {
+    "title": "Fruit Salad",
+    "description": "Healthy mixed fruits bowl.",
+    "instructions": "Chop fruits, mix with honey/lemon.",
+    "cuisine": "General",
+    "category": "Dessert",
+    "ingredients": [
+      { "name": "Apple", "qty": 1, "unit": "pc" },
+      { "name": "Banana", "qty": 1, "unit": "pc" },
+      { "name": "Grapes", "qty": 0.5, "unit": "cup" }
+    ]
+  },
+  {
+    "title": "French Fries",
+    "description": "Crispy fried potato strips.",
+    "instructions": "Cut potatoes, deep fry twice.",
+    "cuisine": "American",
+    "category": "Snacks",
+    "ingredients": [
+      { "name": "Potatoes", "qty": 3, "unit": "pcs" },
+      { "name": "Salt", "qty": 1, "unit": "tsp" }
+    ]
+  },
+  {
+    "title": "Omelette",
+    "description": "Simple fluffy egg omelette.",
+    "instructions": "Beat eggs, add veggies, cook 3 mins.",
+    "cuisine": "General",
+    "category": "Breakfast",
+    "ingredients": [
+      { "name": "Eggs", "qty": 2, "unit": "pcs" },
+      { "name": "Onion", "qty": 0.25, "unit": "cup" }
+    ]
+  },
+  {
+    "title": "Idli Sambar",
+    "description": "Soft steamed idlis served with sambar.",
+    "instructions": "Steam idlis, prepare sambar.",
+    "cuisine": "Indian",
+    "category": "Breakfast",
+    "ingredients": [
+      { "name": "Idli Batter", "qty": 2, "unit": "cups" },
+      { "name": "Toor Dal", "qty": 1, "unit": "cup" }
+    ]
+  },
+  {
+    "title": "Grilled Sandwich",
+    "description": "Vegetable grilled sandwich with chutney.",
+    "instructions": "Assemble veggies, grill till golden.",
+    "cuisine": "Fast Food",
+    "category": "Snacks",
+    "ingredients": [
+      { "name": "Bread", "qty": 4, "unit": "slices" },
+      { "name": "Cheese", "qty": 2, "unit": "slices" }
+    ]
+  }
+]
