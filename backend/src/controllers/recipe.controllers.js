@@ -142,25 +142,109 @@ const listRecipes = async (req, res) => {
       cuisine,
       category,
       ingredientId,
+      trending,
+      featured,
     } = req.query;
+
     page = Math.max(1, Number(page));
     pageSize = Math.min(100, Number(pageSize) || 12);
 
-    const filter = {};
+    const baseFilter = {};
 
-    if (q) filter.$text = { $search: q };
+    // Full-text search
+    if (q) baseFilter.$text = { $search: q };
 
-    if (cuisine) filter.cuisine = cuisine;
-    if (category) filter.category = category;
-    if (ingredientId && mongoose.Types.ObjectId.isValid(ingredientId))
-      filter["ingredients.ingredient"] = mongoose.Types.ObjectId(ingredientId);
+    // Existing filters
+    if (cuisine) baseFilter.cuisine = cuisine;
+    if (category) baseFilter.category = category;
 
+    if (ingredientId && mongoose.Types.ObjectId.isValid(ingredientId)) {
+      baseFilter["ingredients.ingredient"] =
+        mongoose.Types.ObjectId(ingredientId);
+    }
+
+    // We'll build an effective filter and sort based on trending/featured flags.
+    let effectiveFilter = { ...baseFilter };
+    let sort = { createdAt: -1 }; // default: newest first
+
+    // Helper: a "score" field — use popularity if available, else fallback to views+likes (if you have them).
+    // For sorting we prefer to sort by popularity desc, then createdAt desc.
+    const trendingSort = { popularity: -1, createdAt: -1 };
+
+    // ---------- FEATURED (dynamic top-percent selection) ----------
+    if (featured === "true") {
+      // Compute top X% cutoff using popularity within the current baseFilter.
+      // We'll fetch the popularity value at the percentile index and then filter by popularity >= cutoff.
+      // If 'popularity' doesn't exist on docs, this degenerates to returning the top N by whatever numeric field exists.
+      const totalMatching = await Recipe.countDocuments(effectiveFilter);
+
+      if (totalMatching === 0) {
+        // nothing to return
+        return res.status(200).json({
+          data: [],
+          meta: { total: 0, page, pageSize, totalPages: 0 },
+        });
+      }
+
+      // choose topPercent — change this value to tune "featured" share
+      const TOP_PERCENT = 0.1; // top 10%
+      const cutoffIndex = Math.max(
+        0,
+        Math.ceil(totalMatching * TOP_PERCENT) - 1
+      ); // zero-based
+
+      // Find the popularity value at cutoffIndex (descending). If popularity missing, fallback to 0.
+      // We protect against missing/popularity null -> treat as 0 via $ifNull in aggregation OR use find sort and skip.
+      const cutoffDoc = await Recipe.find(effectiveFilter)
+        .sort({ popularity: -1 })
+        .skip(cutoffIndex)
+        .limit(1)
+        .select({ popularity: 1 })
+        .lean();
+
+      let cutoffPopularity = 0;
+      if (
+        Array.isArray(cutoffDoc) &&
+        cutoffDoc.length > 0 &&
+        cutoffDoc[0].popularity != null
+      ) {
+        cutoffPopularity = Number(cutoffDoc[0].popularity) || 0;
+      } else {
+        // If no popularity values present, fallback to selecting top N by createdAt (we'll implement using IDs)
+        // In that case, we will fetch top (cutoffIndex+1) ids and filter by them.
+        const topDocsByDate = await Recipe.find(effectiveFilter)
+          .sort({ createdAt: -1 })
+          .limit(cutoffIndex + 1)
+          .select({ _id: 1 })
+          .lean();
+
+        const topIds = topDocsByDate.map((d) => d._id).filter(Boolean);
+        // restrict to those ids
+        effectiveFilter._id = { $in: topIds };
+      }
+
+      // If we have a meaningful cutoffPopularity, restrict to popularity >= cutoffPopularity
+      if (!("_id" in effectiveFilter) && cutoffPopularity > 0) {
+        // Use $gte: keep all recipes with popularity >= cutoffPopularity
+        effectiveFilter.popularity = { $gte: cutoffPopularity };
+      }
+
+      // After narrowing to featured set, we will sort by trending when requested, else newest
+      sort = trending === "true" ? trendingSort : { createdAt: -1 };
+    } else if (trending === "true") {
+      // ---------- TRENDING (dynamic sorting by score) ----------
+      // If only trending requested, just sort by popularity (or fallback) to return most active recipes first.
+      sort = trendingSort;
+    }
+
+    // If neither featured nor trending specified, keep default sort (newest first).
     const skip = (page - 1) * pageSize;
 
+    // Count after applying effectiveFilter
     const [total, recipes] = await Promise.all([
-      Recipe.countDocuments(filter),
-      Recipe.find(filter)
-        .sort({ createdAt: -1 })
+      Recipe.countDocuments(effectiveFilter),
+      Recipe.find(effectiveFilter)
+        .sort(sort)
         .skip(skip)
         .limit(pageSize)
         .populate("createdByAdmin", "username")

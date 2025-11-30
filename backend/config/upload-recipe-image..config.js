@@ -15,4 +15,10 @@ const storage = new CloudinaryStorage({
   },
 });
 
-exports.uploadRecipeImageConfig = multer({ storage: storage });
+exports.uploadRecipeImageConfig = multer({
+  storage: storage,
+  limits: {
+    fileSize: 50 * 1024 * 1024, 
+    files: 10,
+  },
+});
