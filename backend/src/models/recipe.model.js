@@ -8,12 +8,10 @@ const recipeSchema = new mongoose.Schema(
     instructions: String,
     cuisine: String,
     category: String,
-    imageUrl: String,
     createdByAdmin: { type: mongoose.Schema.Types.ObjectId, ref: "Admin" },
-
     ingredients: [
       {
-        ingredient: { type: mongoose.Schema.Types.ObjectId, ref: "Ingredient" }, 
+        ingredient: { type: mongoose.Schema.Types.ObjectId, ref: "Ingredient" },
         name: String,
         qty: Number,
         unit: String,
