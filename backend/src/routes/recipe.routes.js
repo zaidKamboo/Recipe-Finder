@@ -4,7 +4,7 @@ const router = express.Router();
 const recipeController = require( "../controllers/recipe.controllers" );
 
 const { isAdmin } = require("../middlewares/admin.middleware");
-const uploadRecipeImagesMiddleware = require("../middlewares/upload-recipe-image.middleware");
+const uploadRecipeImagesMiddleware = require("../middlewares/upload_recipe_images.middleware");
 
 router.get("/", recipeController.listRecipes);
 router.get("/:id", recipeController.getRecipe);

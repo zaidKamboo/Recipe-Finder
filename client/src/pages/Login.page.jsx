@@ -1,44 +1,59 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { HiMail, HiLockClosed } from "react-icons/hi";
 import Navbar from "../components/common/Navbar.component";
 import Footer from "../components/common/Footer.component";
-import { HiMail, HiLockClosed } from "react-icons/hi";
+import { useDispatch, useSelector } from "react-redux";
+import { loginUser, clearAuthError, selectAuthStatus, selectAuthError } from "../store/slices/auth.slice";
 
 export default function Login() {
     const navigate = useNavigate();
+    const dispatch = useDispatch();
+    const authStatus = useSelector( selectAuthStatus );
+    const authError = useSelector( selectAuthError );
+
     const [ email, setEmail ] = useState( "" );
     const [ password, setPassword ] = useState( "" );
     const [ showPwd, setShowPwd ] = useState( false );
     const [ remember, setRemember ] = useState( false );
-    const [ loading, setLoading ] = useState( false );
-    const [ error, setError ] = useState( "" );
+    const [ localError, setLocalError ] = useState( "" );
 
     const isValidEmail = ( e ) => /\S+@\S+\.\S+/.test( e );
 
+    useEffect( () => {
+        return () => {
+            dispatch( clearAuthError() );
+        };
+    }, [ dispatch ] );
+
     async function handleLogin( e ) {
         e.preventDefault();
-        setError( "" );
+        setLocalError( "" );
 
         if ( !email.trim() || !password ) {
-            setError( "Please enter both email and password." );
+            setLocalError( "Please enter both email and password." );
             return;
         }
         if ( !isValidEmail( email ) ) {
-            setError( "Please enter a valid email address." );
+            setLocalError( "Please enter a valid email address." );
             return;
         }
 
-        setLoading( true );
-
         try {
-            await new Promise( ( res ) => setTimeout( res, 700 ) );
-            navigate( "/recipes" );
+            await dispatch( loginUser( { email: email.trim(), password } ) ).unwrap();
+            navigate( "/" );
         } catch ( err ) {
-            setError( "Login failed. Check credentials and try again." );
-        } finally {
-            setLoading( false );
+            let msg = "Login failed. Check credentials and try again.";
+            if ( err ) {
+                if ( typeof err === "string" ) msg = err;
+                else if ( err.message ) msg = err.message;
+                else if ( err?.data?.message ) msg = err.data.message;
+            }
+            setLocalError( msg );
         }
     }
+
+    const submitting = authStatus === "loading";
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-[#06040a] via-[#120617] to-[#24122a] text-slate-100 transition-colors">
@@ -46,8 +61,6 @@ export default function Login() {
 
             <main className="max-w-md mx-auto px-4 sm:px-6 lg:px-8 py-20">
                 <div className="rounded-2xl bg-gradient-to-br from-[#0b0710] to-[#221322] border border-[#2b1e2b] shadow-lg p-8">
-
-                    {/* Header */ }
                     <div className="text-center mb-6">
                         <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-[#ff7a1a] to-[#ff3b00] text-black mx-auto mb-3">
                             <svg viewBox="0 0 24 24" className="w-6 h-6">
@@ -56,14 +69,10 @@ export default function Login() {
                         </div>
 
                         <h1 className="text-2xl font-extrabold">Welcome back</h1>
-                        <p className="text-sm text-slate-400 mt-1">
-                            Sign in to your Recipe Finder account
-                        </p>
+                        <p className="text-sm text-slate-400 mt-1">Sign in to your Recipe Finder account</p>
                     </div>
 
-                    {/* Form */ }
                     <form onSubmit={ handleLogin } className="space-y-4">
-                        {/* Email */ }
                         <label className="block">
                             <div className="relative">
                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
@@ -80,7 +89,6 @@ export default function Login() {
                             </div>
                         </label>
 
-                        {/* Password */ }
                         <label className="block">
                             <div className="relative">
                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
@@ -106,7 +114,6 @@ export default function Login() {
                             </div>
                         </label>
 
-                        {/* Remember / Forgot */ }
                         <div className="flex items-center justify-between">
                             <label className="inline-flex items-center gap-3">
                                 <input
@@ -118,36 +125,28 @@ export default function Login() {
                                 <span className="text-sm text-slate-300">Remember me</span>
                             </label>
 
-                            <Link
-                                to="/forgot"
-                                className="text-sm text-slate-300 hover:text-orange-300 transition rounded-full px-2 py-1"
-                            >
+                            <Link to="/forgot" className="text-sm text-slate-300 hover:text-orange-300 transition rounded-full px-2 py-1">
                                 Forgot password?
                             </Link>
                         </div>
 
-                        {/* Error */ }
-                        { error && <div className="text-sm text-red-400">{ error }</div> }
+                        { localError && <div className="text-sm text-red-400">{ localError }</div> }
+                        { !localError && authError && <div className="text-sm text-red-400">{ authError }</div> }
 
-                        {/* Submit */ }
                         <div>
                             <button
                                 type="submit"
-                                disabled={ loading }
+                                disabled={ submitting }
                                 className="w-full inline-flex items-center justify-center px-6 py-3 rounded-full bg-gradient-to-br from-[#ff7a1a] to-[#ff3b00] text-black font-semibold shadow hover:brightness-95 transition disabled:opacity-60"
                             >
-                                { loading ? "Signing in..." : "Sign in" }
+                                { submitting ? "Signing in..." : "Sign in" }
                             </button>
                         </div>
                     </form>
 
-                    {/* Bottom link */ }
                     <div className="mt-6 text-center text-sm text-slate-400">
                         Don’t have an account?{ " " }
-                        <Link
-                            to="/signup"
-                            className="text-slate-100 hover:text-orange-300 rounded-full px-2 py-1"
-                        >
+                        <Link to="/signup" className="text-slate-100 hover:text-orange-300 rounded-full px-2 py-1">
                             Create one
                         </Link>
                     </div>

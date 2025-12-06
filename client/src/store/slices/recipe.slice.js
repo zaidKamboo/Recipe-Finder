@@ -3,8 +3,7 @@ import {
   createAsyncThunk,
   createEntityAdapter,
 } from "@reduxjs/toolkit";
-import BASE_URL from "../../api";
-import { GET_RECIPES_ROUTE } from "../../utils/backend_routes.utils";
+import api from "../../api";
 
 const recipesAdapter = createEntityAdapter({
   selectId: (r) => r.id ?? r._id,
@@ -19,14 +18,9 @@ export const fetchRecipes = createAsyncThunk(
   "recipes/fetchRecipes",
   async (params = {}, { rejectWithValue }) => {
     try {
-      const res = await BASE_URL.get(GET_RECIPES_ROUTE, {
-        params,
-        withCredentials: true,
-      });
-      const payload = res.data ?? res;
-      const items = Array.isArray(payload.data)
-        ? payload.data
-        : payload.items ?? [];
+      const res = await api.get("/recipes", { params, withCredentials: true });
+      const payload = res.data ?? {};
+      const items = payload.data ?? payload.items ?? [];
       const meta = payload.meta ?? {
         total: items.length,
         page: params.page || 1,
@@ -43,11 +37,10 @@ export const fetchRecipe = createAsyncThunk(
   "recipes/fetchRecipe",
   async (id, { rejectWithValue }) => {
     try {
-      const res = await BASE_URL.get(`${GET_RECIPES_ROUTE}/${id}`, {
-        withCredentials: true,
-      });
+      const res = await api.get(`/recipes/${id}`, { withCredentials: true });
       const payload = res.data ?? res;
-      return payload.data ?? payload;
+      const item = payload.data ?? payload;
+      return item;
     } catch (err) {
       return rejectWithValue(err.response?.data ?? err.message);
     }
@@ -58,60 +51,92 @@ export const createRecipe = createAsyncThunk(
   "recipes/createRecipe",
   async (payload, { rejectWithValue }) => {
     try {
-      if (payload?.imageFile) {
+      if (payload?.imageFile || payload?.images?.length) {
         const fd = new FormData();
-        Object.entries(payload.data || {}).forEach(([k, v]) => {
-          if (Array.isArray(v) || typeof v === "object")
+        const data = payload.data ?? payload;
+        Object.entries(data || {}).forEach(([k, v]) => {
+          if (v === undefined || v === null) return;
+          if (typeof v === "object" && !(v instanceof File))
             fd.append(k, JSON.stringify(v));
           else fd.append(k, v);
         });
-        fd.append("image", payload.imageFile);
-        const res = await BASE_URL.post(GET_RECIPES_ROUTE, fd, {
-          withCredentials: true,
+        if (payload.imageFile) fd.append("image", payload.imageFile);
+        if (Array.isArray(payload.images))
+          payload.images.forEach((f) => fd.append("images", f));
+        const res = await api.post("/recipes", fd, {
           headers: { "Content-Type": "multipart/form-data" },
+          withCredentials: true,
         });
-        const payloadRes = res.data ?? res;
-        return payloadRes.data ?? payloadRes;
+        const item = res.data?.data ?? res.data ?? res;
+        return item;
       }
-      const res = await BASE_URL.post(
-        GET_RECIPES_ROUTE,
-        payload.data ?? payload,
-        { withCredentials: true }
-      );
-      const payloadRes = res.data ?? res;
-      return payloadRes.data ?? payloadRes;
+      const res = await api.post("/recipes", payload.data ?? payload, {
+        withCredentials: true,
+      });
+      const item = res.data?.data ?? res.data ?? res;
+      return item;
     } catch (err) {
       return rejectWithValue(err.response?.data ?? err.message);
     }
   }
 );
 
+
 export const updateRecipe = createAsyncThunk(
   "recipes/updateRecipe",
-  async ({ id, data, imageFile }, { rejectWithValue }) => {
+  async (
+    { id, data = {}, images = [], replaceImages } = {},
+    { rejectWithValue }
+  ) => {
     try {
-      if (imageFile) {
+      if (!id) throw new Error("Missing recipe id");
+
+      const hasFiles = Array.isArray(images) && images.length > 0;
+      if (hasFiles) {
         const fd = new FormData();
-        Object.entries(data || {}).forEach(([k, v]) => {
-          if (Array.isArray(v) || typeof v === "object")
+
+        Object.entries(data).forEach(([k, v]) => {
+          if (v === undefined || v === null) return;
+          if (typeof v === "object" && !(v instanceof File)) {
             fd.append(k, JSON.stringify(v));
-          else fd.append(k, v);
+          } else {
+            fd.append(k, v);
+          }
         });
-        fd.append("image", imageFile);
-        const res = await BASE_URL.put(`${GET_RECIPES_ROUTE}/${id}`, fd, {
-          withCredentials: true,
+
+        if (typeof replaceImages !== "undefined") {
+          fd.append("replaceImages", String(replaceImages));
+        }
+
+        images.forEach((file) => {
+          fd.append("recipe-images", file);
+        });
+
+        const res = await api.put(`/recipes/${id}`, fd, {
           headers: { "Content-Type": "multipart/form-data" },
+          withCredentials: true,
         });
-        const payloadRes = res.data ?? res;
-        return payloadRes.data ?? payloadRes;
+
+        const payload = res.data?.recipe ?? res.data?.data ?? res.data ?? res;
+        return payload;
       }
-      const res = await BASE_URL.put(`${GET_RECIPES_ROUTE}/${id}`, data, {
+
+      const body = {
+        ...data,
+      };
+      if (typeof replaceImages !== "undefined")
+        body.replaceImages = replaceImages;
+
+      const res = await api.put(`/recipes/${id}`, body, {
         withCredentials: true,
       });
-      const payloadRes = res.data ?? res;
-      return payloadRes.data ?? payloadRes;
+
+      const payload = res.data?.recipe ?? res.data?.data ?? res.data ?? res;
+      return payload;
     } catch (err) {
-      return rejectWithValue(err.response?.data ?? err.message);
+      return rejectWithValue(
+        err.response?.data ?? err.message ?? "Update failed"
+      );
     }
   }
 );
@@ -120,11 +145,9 @@ export const deleteRecipe = createAsyncThunk(
   "recipes/deleteRecipe",
   async (id, { rejectWithValue }) => {
     try {
-      const res = await BASE_URL.delete(`${GET_RECIPES_ROUTE}/${id}`, {
-        withCredentials: true,
-      });
-      const payloadRes = res.data ?? res;
-      return { id, data: payloadRes };
+      const res = await api.delete(`/recipes/${id}`, { withCredentials: true });
+      const payload = res.data ?? res;
+      return { id, data: payload };
     } catch (err) {
       return rejectWithValue(err.response?.data ?? err.message);
     }
@@ -133,15 +156,21 @@ export const deleteRecipe = createAsyncThunk(
 
 export const uploadRecipeImage = createAsyncThunk(
   "recipes/uploadRecipeImage",
-  async (file, { rejectWithValue }) => {
+  async ({ id, file }, { rejectWithValue }) => {
     try {
       const fd = new FormData();
       fd.append("image", file);
-      const res = await BASE_URL.post(`${GET_RECIPES_ROUTE}/upload`, fd, {
-        withCredentials: true,
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      return res.data ?? res;
+      const res = id
+        ? await api.post(`/recipes/${id}/images`, fd, {
+            headers: { "Content-Type": "multipart/form-data" },
+            withCredentials: true,
+          })
+        : await api.post(`/recipes/uploads`, fd, {
+            headers: { "Content-Type": "multipart/form-data" },
+            withCredentials: true,
+          });
+      const payload = res.data?.data ?? res.data ?? res;
+      return payload;
     } catch (err) {
       return rejectWithValue(err.response?.data ?? err.message);
     }
@@ -226,7 +255,7 @@ const recipesSlice = createSlice({
       })
       .addCase(createRecipe.fulfilled, (state, action) => {
         recipesAdapter.addOne(state, action.payload);
-        state.total += 1;
+        state.total = (state.total || 0) + 1;
         state.status = "succeeded";
       })
       .addCase(createRecipe.rejected, (state, action) => {
@@ -250,9 +279,8 @@ const recipesSlice = createSlice({
         state.error = null;
       })
       .addCase(deleteRecipe.fulfilled, (state, action) => {
-        const { id } = action.payload;
-        recipesAdapter.removeOne(state, id);
-        state.total = Math.max(0, state.total - 1);
+        recipesAdapter.removeOne(state, action.payload.id);
+        state.total = Math.max(0, (state.total || 0) - 1);
         state.status = "succeeded";
       })
       .addCase(deleteRecipe.rejected, (state, action) => {
@@ -263,7 +291,7 @@ const recipesSlice = createSlice({
         state.status = "loading";
         state.error = null;
       })
-      .addCase(uploadRecipeImage.fulfilled, (state) => {
+      .addCase(uploadRecipeImage.fulfilled, (state, action) => {
         state.status = "succeeded";
       })
       .addCase(uploadRecipeImage.rejected, (state, action) => {
