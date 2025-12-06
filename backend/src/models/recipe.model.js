@@ -18,6 +18,7 @@ const recipeSchema = new mongoose.Schema(
         notes: String,
       },
     ],
+    images: [{ type: String, required: true }],
   },
   { timestamps: true }
 );

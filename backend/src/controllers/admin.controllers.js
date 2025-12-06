@@ -1,4 +1,7 @@
+const Recipe = require("../models/recipe.model");
+const User = require("../models/user.model");
 const Admin = require("../models/admin.model");
+const Ingredient = require("../models/ingredient.model");
 const { generateToken } = require("../utils/jwt.utils");
 
 function cookieOptions() {
@@ -143,6 +146,167 @@ exports.logoutAdmin = async (req, res) => {
     return res.status(200).json({ message: "Logged out successfully" });
   } catch (err) {
     console.error("logoutAdmin error:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+exports.getDashboardDetails = async (req, res) => {
+  try {
+    // require admin auth (adjust depending on your auth middleware)
+    const adminId = req.user?.id;
+    if (!adminId) return res.status(401).json({ message: "Unauthorized" });
+
+    // run multiple queries in parallel for speed
+    const countsPromise = Promise.all([
+      Recipe.countDocuments().catch(() => 0),
+      User.countDocuments().catch(() => 0),
+      Admin.countDocuments().catch(() => 0),
+    ]);
+
+    // recent recipes (most recent 8) — select fields safe to send to admin UI
+    const recentRecipesPromise = Recipe.find({})
+      .sort({ createdAt: -1 })
+      .limit(8)
+      .select("title category createdAt images description")
+      .lean();
+
+    // recipes by category aggregation
+    const byCategoryPromise = Recipe.aggregate([
+      {
+        $group: {
+          _id: { $ifNull: ["$category", "uncategorized"] },
+          count: { $sum: 1 },
+        },
+      },
+      { $project: { category: "$_id", count: 1, _id: 0 } },
+      { $sort: { count: -1 } },
+    ]).catch(() => []);
+
+    // top recipes (by popularity or createdAt fallback) — try to use 'popularity' if exists
+    const topRecipesPromise = Recipe.find({})
+      .sort({ popularity: -1, createdAt: -1 })
+      .limit(6)
+      .select("title category popularity images")
+      .lean()
+      .catch(() => []);
+
+    // pending reviews — optional model, gracefully fallback to 0 if no Review model
+    let pendingReviewsPromise;
+    try {
+      // try to require review model (if you have one)
+      // adjust path/name to your actual review model file
+      // eslint-disable-next-line global-require, import/no-dynamic-require
+      const Review = require("../models/review.model");
+      pendingReviewsPromise = Review.countDocuments({
+        status: "pending",
+      }).catch(() => 0);
+    } catch (e) {
+      pendingReviewsPromise = Promise.resolve(0);
+    }
+
+    const [
+      [totalRecipes, totalUsers, totalAdmins],
+      recentRecipes,
+      recipesByCategory,
+      topRecipes,
+      pendingReviews,
+    ] = await Promise.all([
+      countsPromise,
+      recentRecipesPromise,
+      byCategoryPromise,
+      topRecipesPromise,
+      pendingReviewsPromise,
+    ]);
+
+    const summary = {
+      totalRecipes: Number(totalRecipes) || 0,
+      totalUsers: Number(totalUsers) || 0,
+      totalAdmins: Number(totalAdmins) || 0,
+      pendingReviews: Number(pendingReviews) || 0,
+      recipesByCategory: Array.isArray(recipesByCategory)
+        ? recipesByCategory
+        : [],
+      recentRecipes: Array.isArray(recentRecipes) ? recentRecipes : [],
+      topRecipes: Array.isArray(topRecipes) ? topRecipes : [],
+      fetchedAt: new Date().toISOString(),
+    };
+
+    return res
+      .status(200)
+      .json({ message: "Dashboard details", data: summary });
+  } catch (err) {
+    console.error("getDashboardDetails error:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+exports.getDashboardDetails = async (req, res) => {
+  try {
+    const adminId = req.user?.id;
+    if (!adminId) return res.status(401).json({ message: "Unauthorized" });
+
+    const countsPromise = Promise.all([
+      Recipe.countDocuments().catch(() => 0),
+      User.countDocuments().catch(() => 0),
+      Admin.countDocuments().catch(() => 0),
+      Ingredient.countDocuments().catch(() => 0),
+    ]);
+
+    const recentRecipesPromise = Recipe.find({})
+      .sort({ createdAt: -1 })
+      .limit(8)
+      .select("title category createdAt images description")
+      .lean()
+      .catch(() => []);
+
+    const byCategoryPromise = Recipe.aggregate([
+      {
+        $group: {
+          _id: { $ifNull: ["$category", "uncategorized"] },
+          count: { $sum: 1 },
+        },
+      },
+      { $project: { category: "$_id", count: 1, _id: 0 } },
+      { $sort: { count: -1 } },
+    ]).catch(() => []);
+
+    const topRecipesPromise = Recipe.find({})
+      .sort({ popularity: -1, createdAt: -1 })
+      .limit(6)
+      .select("title category popularity images")
+      .lean()
+      .catch(() => []);
+
+    const [
+      [totalRecipes, totalUsers, totalAdmins, totalIngredients],
+      recentRecipes,
+      recipesByCategory,
+      topRecipes,
+    ] = await Promise.all([
+      countsPromise,
+      recentRecipesPromise,
+      byCategoryPromise,
+      topRecipesPromise,
+    ]);
+
+    const summary = {
+      totalRecipes: Number(totalRecipes) || 0,
+      totalUsers: Number(totalUsers) || 0,
+      totalAdmins: Number(totalAdmins) || 0,
+      totalIngredients: Number(totalIngredients) || 0,
+      recipesByCategory: Array.isArray(recipesByCategory)
+        ? recipesByCategory
+        : [],
+      recentRecipes: Array.isArray(recentRecipes) ? recentRecipes : [],
+      topRecipes: Array.isArray(topRecipes) ? topRecipes : [],
+      fetchedAt: new Date().toISOString(),
+    };
+
+    return res
+      .status(200)
+      .json({ message: "Dashboard details", data: summary });
+  } catch (err) {
+    console.error("getDashboardDetails error:", err);
     return res.status(500).json({ message: "Server error" });
   }
 };
