@@ -1,5 +1,5 @@
 const User = require("../models/user.model");
-const jwt = require("jsonwebtoken");
+const cloudinary = require("../../config/cloudinary.config");
 const {
   generateToken,
   setAuthCookie,
@@ -104,50 +104,74 @@ exports.updateProfile = async (req, res) => {
     const userId = req.user.id;
     const { name, preferences, oldPassword, newPassword } = req.body;
 
-    if ("email" in req.body) {
+    if ("email" in req.body)
       return res.status(400).json({ message: "Email cannot be changed" });
-    }
 
     const user = await User.findById(userId).select("+passwordHash");
     if (!user) return res.status(404).json({ message: "User not found" });
 
     if (oldPassword || newPassword) {
-      if (!oldPassword || !newPassword) {
+      if (!oldPassword || !newPassword)
         return res.status(400).json({
           message:
             "Provide both oldPassword and newPassword to change password",
         });
-      }
+
       const valid = await user.validatePassword(oldPassword);
       if (!valid)
         return res.status(401).json({ message: "Old password is incorrect" });
-      if (typeof newPassword !== "string" || newPassword.length < 6) {
+
+      if (typeof newPassword !== "string" || newPassword.length < 6)
         return res.status(400).json({
           message: "New password must be a string with at least 6 characters",
         });
-      }
+
       await user.setPassword(newPassword);
     }
 
-    if (typeof name === "string" && name.trim().length) {
-      user.name = name.trim();
-    }
+    if (typeof name === "string" && name.trim().length) user.name = name.trim();
 
-    if (typeof preferences === "string") {
+    if (typeof preferences === "string")
       try {
         user.preferences = JSON.parse(preferences);
       } catch (e) {
         return res.status(400).json({ message: "Invalid preferences JSON" });
       }
-    } else if (typeof preferences === "object" && preferences !== null) {
+    else if (typeof preferences === "object" && preferences !== null)
       user.preferences = preferences;
-    }
 
-    if (req.file && req.file.path) {
-      user.profilePic = req.file.path;
+    if (req.file) {
+      if (user.profilePic && user.profilePic.publicId)
+        try {
+          await cloudinary.uploader.destroy(user.profilePic.publicId);
+        } catch (cloudErr) {
+          console.error(
+            "Cloudinary profilePic delete error:",
+            cloudErr?.message || cloudErr
+          );
+        }
+
+      const url = req.file.path || req.file.secure_url || req.file.url || null;
+
+      const publicId =
+        req.file.filename || req.file.public_id || req.file.publicId || null;
+
+      const originalName = req.file.originalname || req.file.originalName;
+
+      if (!url || !publicId)
+        return res.status(400).json({
+          message: "Could not determine uploaded profile picture URL/publicId",
+        });
+
+      user.profilePic = {
+        url,
+        publicId,
+        originalName,
+      };
     }
 
     const saved = await user.save();
+
     const clientObj =
       typeof saved.toClient === "function"
         ? saved.toClient()
@@ -157,6 +181,7 @@ exports.updateProfile = async (req, res) => {
             delete o.__v;
             return o;
           })();
+
     return res
       .status(200)
       .json({ message: "Profile updated", user: clientObj });
@@ -166,11 +191,23 @@ exports.updateProfile = async (req, res) => {
   }
 };
 
-
-
 exports.deleteUser = async (req, res) => {
   try {
     const userId = req.user.id;
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (user.profilePic && user.profilePic.publicId) {
+      try {
+        await cloudinary.uploader.destroy(user.profilePic.publicId);
+      } catch (cloudErr) {
+        console.error(
+          "Cloudinary profilePic delete error on account delete:",
+          cloudErr?.message || cloudErr
+        );
+      }
+    }
 
     await User.findByIdAndDelete(userId);
 

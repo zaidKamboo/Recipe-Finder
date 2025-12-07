@@ -86,13 +86,13 @@ export default function Recipe() {
 
                                     {/* IMAGE SECTION (now wider) */ }
                                     <div className="md:col-span-2 flex flex-col gap-4">
-                                        <div className="relative rounded-xl overflow-hidden border border-[#2b1e2b] bg-[#0b0710]">
-                                            <div className="w-full aspect-[4/3] bg-slate-900 flex items-center justify-center">
+                                        <div className="relative rounded-xl overflow-hidden border border-[#2b1e2b] ">
+                                            <div className="w-full aspect-[4/3]  flex items-center justify-center">
                                                 { images.length ? (
                                                     <img
-                                                        src={ images[ imgIndex ] }
+                                                        src={ images[ imgIndex ]?.url }
                                                         alt={ recipe.title }
-                                                        className="w-full h-full object-cover"
+                                                        className="w-full h-full object-contain"
                                                     />
                                                 ) : (
                                                     <div className="text-slate-400">No image</div>

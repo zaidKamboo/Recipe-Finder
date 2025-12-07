@@ -18,7 +18,13 @@ const recipeSchema = new mongoose.Schema(
         notes: String,
       },
     ],
-    images: [{ type: String, required: true }],
+    images: [
+      {
+        url: { type: String, required: true },
+        publicId: { type: String, required: true },
+        originalName: String,
+      },
+    ],
   },
   { timestamps: true }
 );

@@ -5,6 +5,7 @@
     import Hero from "../components/home/Hero.component";
     import Navbar from "../components/common/Navbar.component";
     import TrendingRecipes from "../components/home/TrendingRecipes.component";
+import HowItWorks from "../components/home/HowItWorks.component";
 
     export default function Home() {
         return (
@@ -18,8 +19,12 @@
                         </section>
 
                         <section className="mb-12">
+                            <HowItWorks />
+                        </section>
+                        <section className="mb-12">
                             <Categories />
                         </section>
+
 
                         <section className="mb-20">
                             <TrendingRecipes />

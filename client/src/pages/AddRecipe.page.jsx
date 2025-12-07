@@ -14,6 +14,20 @@ import Footer from "../components/common/Footer.component";
 
 import { createRecipe, fetchRecipes } from "../store/slices/recipes.slice";
 
+/* ---------- Fullscreen loading overlay ---------- */
+function LoadingOverlay( { message = "Creating recipe..." } ) {
+    return (
+        <div
+            className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm"
+            role="status"
+            aria-live="polite"
+        >
+            <div className="w-16 h-16 rounded-full border-4 border-t-transparent border-orange-500 animate-spin" />
+            <p className="mt-4 text-sm text-orange-200">{ message }</p>
+        </div>
+    );
+}
+
 /* ---------- ImagePreview component (handles File -> dataURL preview) ---------- */
 function ImagePreview( { file, onRemove } ) {
     const [ src, setSrc ] = useState( null );
@@ -143,7 +157,6 @@ export default function AddRecipe() {
 
         setLoading( true );
         try {
-            // prepare plain JSON data (createRecipe will detect images array and convert to FormData)
             const data = {
                 title,
                 category,
@@ -160,18 +173,16 @@ export default function AddRecipe() {
                 } ),
             };
 
-            // call createRecipe thunk; pass images array so thunk builds FormData
-            await dispatch( createRecipe( { data, images: newImages } ) ).unwrap();
+            await dispatch( createRecipe( { data, imageFiles: newImages } ) ).unwrap();
 
-            // refresh listing
             dispatch( fetchRecipes( { page: 1, pageSize: 12 } ) ).catch( () => { } );
 
             setSuccessMsg( "Recipe created" );
-            // navigate to admin list after small delay
-            setTimeout( () => navigate( "/admin/recipes" ), 700 );
+            setTimeout( () => navigate( "/recipes" ), 700 );
         } catch ( err ) {
-            // thunk returns structured error or string
-            setError( err?.message || err?.error || JSON.stringify( err ) || "Create failed" );
+            setError(
+                err?.message || err?.error || JSON.stringify( err ) || "Create failed"
+            );
         } finally {
             setLoading( false );
         }
@@ -182,7 +193,7 @@ export default function AddRecipe() {
     }, [ title, loading ] );
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-[#06040a] via-[#120617] to-[#24122a] text-slate-100">
+        <div className="min-h-screen bg-gradient-to-b from-[#06040a] via-[#120617] to-[#24122a] text-slate-100 relative">
             <Navbar />
 
             <main className="pt-24 pb-12 px-4 max-w-4xl mx-auto">
@@ -196,13 +207,17 @@ export default function AddRecipe() {
                     </button>
                     <div>
                         <h1 className="text-2xl font-semibold">Add Recipe</h1>
-                        <div className="text-sm text-slate-400">Create a new recipe (model fields only)</div>
+                        <div className="text-sm text-slate-400">
+                            Create a new recipe (model fields only)
+                        </div>
                     </div>
                 </div>
 
                 <form onSubmit={ handleSubmit } className="space-y-6">
                     { error && <div className="text-sm text-red-400">{ error }</div> }
-                    { successMsg && <div className="text-sm text-emerald-300">{ successMsg }</div> }
+                    { successMsg && (
+                        <div className="text-sm text-emerald-300">{ successMsg }</div>
+                    ) }
 
                     {/* title / category / cuisine */ }
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -265,7 +280,9 @@ export default function AddRecipe() {
                     <div>
                         <div className="flex items-center justify-between">
                             <label className="text-xs text-slate-400">Ingredients</label>
-                            <div className="text-xs text-slate-500">{ ingredients.length } items</div>
+                            <div className="text-xs text-slate-500">
+                                { ingredients.length } items
+                            </div>
                         </div>
 
                         <div className="mt-2 space-y-2">
@@ -277,7 +294,9 @@ export default function AddRecipe() {
                                     <div className="sm:col-span-2">
                                         <input
                                             value={ ing.name }
-                                            onChange={ ( e ) => updateIngredient( idx, { name: e.target.value } ) }
+                                            onChange={ ( e ) =>
+                                                updateIngredient( idx, { name: e.target.value } )
+                                            }
                                             placeholder="Ingredient name"
                                             className="w-full px-2 py-2 rounded-md bg-[#08060a] border border-[#2b1e2b] text-slate-100"
                                         />
@@ -288,7 +307,10 @@ export default function AddRecipe() {
                                             value={ ing.qty ?? "" }
                                             onChange={ ( e ) =>
                                                 updateIngredient( idx, {
-                                                    qty: e.target.value === "" ? undefined : Number( e.target.value ),
+                                                    qty:
+                                                        e.target.value === ""
+                                                            ? undefined
+                                                            : Number( e.target.value ),
                                                 } )
                                             }
                                             placeholder="Qty"
@@ -299,7 +321,9 @@ export default function AddRecipe() {
                                     <div>
                                         <input
                                             value={ ing.unit ?? "" }
-                                            onChange={ ( e ) => updateIngredient( idx, { unit: e.target.value } ) }
+                                            onChange={ ( e ) =>
+                                                updateIngredient( idx, { unit: e.target.value } )
+                                            }
                                             placeholder="Unit (e.g. tsp)"
                                             className="w-full px-2 py-2 rounded-md bg-[#08060a] border border-[#2b1e2b] text-slate-100"
                                         />
@@ -308,7 +332,9 @@ export default function AddRecipe() {
                                     <div className="sm:col-span-1">
                                         <input
                                             value={ ing.notes ?? "" }
-                                            onChange={ ( e ) => updateIngredient( idx, { notes: e.target.value } ) }
+                                            onChange={ ( e ) =>
+                                                updateIngredient( idx, { notes: e.target.value } )
+                                            }
                                             placeholder="Notes"
                                             className="w-full px-2 py-2 rounded-md bg-[#08060a] border border-[#2b1e2b] text-slate-100"
                                         />
@@ -377,16 +403,28 @@ export default function AddRecipe() {
                     <div>
                         <div className="flex items-center justify-between">
                             <label className="text-xs text-slate-400">Images</label>
-                            <div className="text-xs text-slate-500">{ newImages.length } selected</div>
+                            <div className="text-xs text-slate-500">
+                                { newImages.length } selected
+                            </div>
                         </div>
 
                         <div className="mt-2 flex gap-3 flex-wrap">
                             { newImages.map( ( f, idx ) => (
-                                <ImagePreview key={ idx } file={ f } onRemove={ () => removeNewImage( idx ) } />
+                                <ImagePreview
+                                    key={ idx }
+                                    file={ f }
+                                    onRemove={ () => removeNewImage( idx ) }
+                                />
                             ) ) }
 
                             <label className="w-28 h-20 flex items-center justify-center rounded-xl bg-[#08060a] border border-[#24121b] cursor-pointer">
-                                <input onChange={ handleNewImagesPicked } type="file" accept="image/*" multiple className="hidden" />
+                                <input
+                                    onChange={ handleNewImagesPicked }
+                                    type="file"
+                                    accept="image/*"
+                                    multiple
+                                    className="hidden"
+                                />
                                 <div className="flex flex-col items-center text-slate-400">
                                     <HiOutlineCloudUpload className="w-6 h-6" />
                                     <div className="text-xs mt-1">Upload</div>
@@ -400,13 +438,16 @@ export default function AddRecipe() {
                         <button
                             type="submit"
                             disabled={ !canSubmit }
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-br from-[#ff7a1a] to-[#ff3b00] text-black font-semibold"
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-br from-[#ff7a1a] to-[#ff3b00] text-black font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
                         >
                             <HiPencil className="w-5 h-5" />
                             { loading ? "Creating..." : "Create Recipe" }
                         </button>
 
-                        <Link to="/admin/recipes" className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[rgba(255,255,255,0.02)] border border-[#2b1e2b] text-sm">
+                        <Link
+                            to="/admin/recipes"
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[rgba(255,255,255,0.02)] border border-[#2b1e2b] text-sm"
+                        >
                             Cancel
                         </Link>
 
@@ -436,6 +477,8 @@ export default function AddRecipe() {
             </main>
 
             <Footer />
+    
+            { loading && <LoadingOverlay message="Creating recipe..." /> }
         </div>
     );
 }

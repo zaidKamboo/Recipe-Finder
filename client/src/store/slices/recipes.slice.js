@@ -58,21 +58,37 @@ export const createRecipe = createAsyncThunk(
   "recipes/createRecipe",
   async (payload, { rejectWithValue }) => {
     try {
-      if (payload?.imageFile) {
+      const hasMultipleFiles =
+        Array.isArray(payload?.imageFiles) && payload.imageFiles.length > 0;
+      const hasSingleFile = payload?.imageFile;
+      if (hasMultipleFiles || hasSingleFile) {
         const fd = new FormData();
+
         Object.entries(payload.data || {}).forEach(([k, v]) => {
-          if (Array.isArray(v) || typeof v === "object")
+          if (Array.isArray(v) || typeof v === "object") {
             fd.append(k, JSON.stringify(v));
-          else fd.append(k, v);
+          } else {
+            fd.append(k, v);
+          }
         });
-        fd.append("image", payload.imageFile);
+
+        if (hasMultipleFiles) {
+          payload.imageFiles.forEach((file) => {
+            fd.append("recipe-images", file);
+          });
+        } else if (hasSingleFile) {
+          fd.append("recipe-images", payload.imageFile);
+        }
+
         const res = await BASE_URL.post(GET_RECIPES_ROUTE, fd, {
           withCredentials: true,
           headers: { "Content-Type": "multipart/form-data" },
         });
+
         const payloadRes = res.data ?? res;
         return payloadRes.data ?? payloadRes;
       }
+
       const res = await BASE_URL.post(
         GET_RECIPES_ROUTE,
         payload.data ?? payload,
@@ -90,24 +106,38 @@ export const updateRecipe = createAsyncThunk(
   "recipes/updateRecipe",
   async ({ id, data, imageFile }, { rejectWithValue }) => {
     try {
+      let body = data;
+      const config = {
+        withCredentials: true,
+      };
+
       if (imageFile) {
         const fd = new FormData();
+
         Object.entries(data || {}).forEach(([k, v]) => {
-          if (Array.isArray(v) || typeof v === "object")
+          if (v === undefined || v === null) return;
+          if (Array.isArray(v) || typeof v === "object") {
             fd.append(k, JSON.stringify(v));
-          else fd.append(k, v);
+          } else {
+            fd.append(k, v);
+          }
         });
-        fd.append("image", imageFile);
-        const res = await BASE_URL.put(`${GET_RECIPES_ROUTE}/${id}`, fd, {
-          withCredentials: true,
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-        const payloadRes = res.data ?? res;
-        return payloadRes.data ?? payloadRes;
+
+        fd.append("recipe-images", imageFile);
+
+        body = fd;
+        config.headers = { "Content-Type": "multipart/form-data" };
       }
-      const res = await BASE_URL.put(`${GET_RECIPES_ROUTE}/${id}`, data, {
-        withCredentials: true,
-      });
+      else if (data instanceof FormData) {
+        body = data;
+        config.headers = { "Content-Type": "multipart/form-data" };
+      }
+
+      const res = await BASE_URL.put(
+        `${GET_RECIPES_ROUTE}/${id}`,
+        body,
+        config
+      );
       const payloadRes = res.data ?? res;
       return payloadRes.data ?? payloadRes;
     } catch (err) {
@@ -115,6 +145,7 @@ export const updateRecipe = createAsyncThunk(
     }
   }
 );
+
 
 export const deleteRecipe = createAsyncThunk(
   "recipes/deleteRecipe",

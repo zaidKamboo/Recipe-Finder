@@ -44,7 +44,7 @@ export default function Profile() {
         } catch ( e ) {
             setPreferencesText( "" );
         }
-        setPreviewUrl( user.profilePic ?? null );
+        setPreviewUrl( user.profilePic?.url ?? null );
     }, [ user ] );
 
     function onFileChange( e ) {
@@ -54,7 +54,7 @@ export default function Profile() {
             const url = URL.createObjectURL( f );
             setPreviewUrl( url );
         } else {
-            setPreviewUrl( user?.profilePic ?? null );
+            setPreviewUrl( user?.profilePic?.url ?? null );
         }
     }
 
