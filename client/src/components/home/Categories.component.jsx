@@ -24,8 +24,7 @@ const CATEGORIES = [
 
 export default function Categories( { enableAnimations = true } = {} ) {
     const sectionRef = useRef( null );
-    const scrollTlRef = useRef( null );
-    const borderTlRef = useRef( null );
+    const gsapCtxRef = useRef( null );
 
     useEffect( () => {
         if ( !enableAnimations ) return;
@@ -47,88 +46,87 @@ export default function Categories( { enableAnimations = true } = {} ) {
                 const section = sectionRef.current;
                 if ( !section ) return;
 
-                const cards = section.querySelectorAll( "[data-category-card]" );
-                if ( !cards.length ) return;
+                const ctx = gsapInstance.context( () => {
+                    const cards = gsapInstance.utils.toArray(
+                        "[data-category-card]"
+                    );
 
-                /* --------------------------------
-                   🎛 Initial States
-                --------------------------------- */
-                gsapInstance.set( section, {
-                    opacity: 0,
-                    y: 60,
-                    scale: 0.96,
-                } );
+                    if ( !cards.length ) return;
 
-                gsapInstance.set( cards, {
-                    opacity: 0,
-                    y: 30,
-                    scale: 0.96,
-                } );
-
-                /* --------------------------------
-                   ▶️ Play on enter, ◀️ reverse on leave
-                   (based on viewport)
-                --------------------------------- */
-                const scrollTl = gsapInstance.timeline( {
-                    scrollTrigger: {
-                        trigger: section,
-                        start: "top 85%",     // when top of section is near bottom of viewport
-                        end: "bottom 45%",    // when bottom of section is near top
-                        toggleActions: "play reverse play reverse",
-                        // onEnter, onLeave, onEnterBack, onLeaveBack
-                        // markers: true,
-                    },
-                } );
-
-                scrollTl
-                    .to( section, {
-                        opacity: 1,
-                        y: 0,
-                        scale: 1,
-                        duration: 0.6,
-                        ease: "power2.out",
-                    } )
-                    .to(
-                        cards,
+                    // SECTION: fade + move in/out with scroll
+                    gsapInstance.fromTo(
+                        section,
+                        {
+                            opacity: 0,
+                            y: 80,
+                            scale: 0.96,
+                        },
                         {
                             opacity: 1,
                             y: 0,
                             scale: 1,
-                            duration: 0.9,
-                            ease: "power3.out",
-                            stagger: {
-                                each: 0.08,
-                                from: "start",
+                            ease: "power2.out",
+                            scrollTrigger: {
+                                trigger: section,
+                                start: "top 80%",   // start anim when top is near bottom of viewport
+                                end: "bottom 40%",  // done anim when bottom is near middle
+                                scrub: 0.5,         // tie progress to scroll (smooth)
                             },
-                        },
-                        "-=0.25"
+                        }
                     );
 
-                scrollTlRef.current = scrollTl;
+                    // CARDS: staggered fade/slide in, reversed on scroll up
+                    gsapInstance.from( cards, {
+                        opacity: 0,
+                        y: 40,
+                        scale: 0.96,
+                        ease: "power3.out",
+                        stagger: {
+                            each: 0.15,
+                            from: "start",
+                        },
+                        scrollTrigger: {
+                            trigger: section,
+                            start: "top 78%",
+                            end: "bottom 35%",
+                            scrub: 0.7,
+                        },
+                    } );
 
-                /* --------------------------------
-                   ✨ Soft Border / Glow Loop
-                --------------------------------- */
-                borderTlRef.current = gsapInstance.to( section, {
-                    boxShadow: "0 0 22px rgba(255,122,26,0.32)",
-                    borderColor: "#ff7a1a",
-                    duration: 3,
-                    repeat: -1,
-                    yoyo: true,
-                    ease: "sine.inOut",
-                } );
+                    // Soft border / glow that intensifies as you scroll over the section
+                    gsapInstance.fromTo(
+                        section,
+                        {
+                            boxShadow: "0 0 0 rgba(255,122,26,0)",
+                            borderColor: "#2b1e2b",
+                        },
+                        {
+                            boxShadow: "0 0 28px rgba(255,122,26,0.32)",
+                            borderColor: "#ff7a1a",
+                            ease: "sine.inOut",
+                            scrollTrigger: {
+                                trigger: section,
+                                start: "top 85%",
+                                end: "bottom 30%",
+                                scrub: 1,
+                            },
+                        }
+                    );
+                }, section );
+
+                gsapCtxRef.current = ctx;
             } catch ( err ) {
                 // silent fail
+                console.error( "Categories GSAP error:", err );
             }
         } )();
 
         return () => {
+            // Clean up all animations & ScrollTriggers for this component
             try {
-                scrollTlRef.current?.scrollTrigger?.kill?.();
-                scrollTlRef.current?.kill?.();
-                borderTlRef.current?.kill?.();
+                gsapCtxRef.current?.revert?.();
             } catch {
-                // ignore cleanup issues
+                // ignore
             }
         };
     }, [ enableAnimations ] );
@@ -137,13 +135,12 @@ export default function Categories( { enableAnimations = true } = {} ) {
         <div
             ref={ sectionRef }
             className="
-        relative
-        rounded-2xl p-6 
-        bg-gradient-to-br from-[#08050a] to-[#221322] 
-        border border-[#2b1e2b] shadow-xl text-slate-100
-        will-change-transform will-change-opacity
-        overflow-hidden
-      "
+                relative
+                rounded-2xl p-6 
+                bg-gradient-to-br from-[#08050a] to-[#221322] 
+                border border-[#2b1e2b] shadow-xl text-slate-100
+                overflow-hidden
+            "
         >
             {/* Soft inner glow accent */ }
             <div
@@ -170,13 +167,12 @@ export default function Categories( { enableAnimations = true } = {} ) {
                             to={ `/recipes?category=${c.key}` }
                             data-category-card
                             className="
-                group flex flex-col items-start p-4 rounded-xl 
-                bg-gradient-to-br from-[#0b0710] to-[#221322] 
-                border border-[#2b1e2b] shadow-md transition 
-                hover:-translate-y-1.5 hover:shadow-2xl hover:border-[#ff7a1a]
-                hover:scale-[1.02]
-                will-change-transform will-change-opacity
-              "
+                                group flex flex-col items-start p-4 rounded-xl 
+                                bg-gradient-to-br from-[#0b0710] to-[#221322] 
+                                border border-[#2b1e2b] shadow-md transition 
+                                hover:-translate-y-1.5 hover:shadow-2xl hover:border-[#ff7a1a]
+                                hover:scale-[1.02]
+                            "
                         >
                             <div className="flex items-center gap-3">
                                 <span className="w-10 h-10 flex items-center justify-center rounded-lg bg-[#160a11] border border-[#3a2333] text-orange-300 text-2xl">

@@ -280,7 +280,7 @@ export default function EditRecipe() {
 
         const ingPayload = ingredients.map( ( i ) => {
             const out = {};
-            if ( i.ingredient ) out.ingredient = i.ingredient; // objectId or string
+            if ( i.ingredient ) out.ingredient = i.ingredient;
             if ( i.name !== undefined ) out.name = i.name;
             if ( i.qty !== undefined && i.qty !== null && i.qty !== "" ) out.qty = i.qty;
             if ( i.unit !== undefined ) out.unit = i.unit;
@@ -297,13 +297,20 @@ export default function EditRecipe() {
             if ( cuisine ) fd.append( "cuisine", cuisine );
 
             fd.append( "ingredients", JSON.stringify( ingPayload ) );
-            // images handling: send remaining existing images (so backend keeps them) and removed images list
+
+            // tell backend which existing images to KEEP
             fd.append( "existingImages", JSON.stringify( existingImages ) );
+
+            // and which URLs were removed on the client
             fd.append( "removedImages", JSON.stringify( removedImageUrls ) );
-            newImages.forEach( ( f ) => fd.append( "images", f ) );
+
+            // ✅ multiple new files under field "recipe-images"
+            newImages.forEach( ( f ) => fd.append( "recipe-images", f ) );
+
             return fd;
         }
 
+        // no new images → simple JSON
         return {
             title,
             category,
@@ -315,6 +322,7 @@ export default function EditRecipe() {
             removedImages: removedImageUrls,
         };
     }
+
 
     async function handleSubmit( e ) {
         e.preventDefault();
@@ -329,10 +337,8 @@ export default function EditRecipe() {
         setLoading( true );
         try {
             const payload = createPayload();
-            // call your thunk — your thunk handles FormData vs JSON
             await dispatch( updateRecipe( { id, data: payload } ) ).unwrap();
 
-            // refresh the listing/dashboard
             dispatch( fetchRecipes( { page: 1, pageSize: 12 } ) ).catch( () => { } );
 
             setSuccessMsg( "Recipe updated" );

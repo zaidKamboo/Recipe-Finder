@@ -15,7 +15,11 @@ const userSchema = new mongoose.Schema(
     },
     passwordHash: { type: String, required: true, select: false },
     preferences: { type: Object, default: {} },
-    profilePic: { type: String, default: null },
+    profilePic: {
+      url: { type: String, required: true },
+      publicId: { type: String, required: true },
+      originalName: String,
+    },
   },
   { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );

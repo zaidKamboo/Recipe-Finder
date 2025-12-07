@@ -102,9 +102,9 @@ export default function Navbar() {
                                 to="/profile"
                                 className="flex items-center gap-3 px-2 py-1 rounded-full bg-[#1b0b12] text-slate-200 border border-[#2b1e2b]"
                             >
-                                { user.profilePic ? (
+                                    { user.profilePic?.url ? (
                                     <img
-                                        src={ user.profilePic }
+                                            src={ user.profilePic?.url }
                                         alt={ user.name ?? "User" }
                                         className="w-8 h-8 rounded-full object-cover"
                                     />
@@ -228,8 +228,8 @@ export default function Navbar() {
                                 onClick={ () => setOpen( false ) }
                                 className="flex items-center gap-3 px-3 py-2 rounded-full bg-[#1b0b12] text-slate-200 border border-[#2b1e2b]"
                             >
-                                { user.profilePic ? (
-                                    <img src={ user.profilePic } alt={ user.name ?? "User" } className="w-8 h-8 rounded-full object-cover" />
+                                    { user.profilePic?.url ? (
+                                        <img src={ user.profilePic?.url } alt={ user.name ?? "User" } className="w-8 h-8 rounded-full object-cover" />
                                 ) : (
                                     <span className="inline-flex w-8 h-8 items-center justify-center rounded-full bg-[#2b1820] text-orange-300">
                                         <HiUser className="w-5 h-5" />

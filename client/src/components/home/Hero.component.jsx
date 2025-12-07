@@ -173,7 +173,7 @@ export default function HeroHalloween( { enableAnimations = true } = {} ) {
             <div className="absolute inset-0">
                 <img
                     ref={ bgRef }
-                    src="/home/creamy-tomato-pasta.jpg"
+                    src="/home/creamy-tomato-pasta.png"
                     onError={ ( e ) => {
                         e.currentTarget.src =
                             "data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 120'%3E%3Crect width='200' height='120' fill='%230a060d'/%3E%3Ctext x='50%' y='50%' fill='orange' font-size='16' text-anchor='middle'%3ERecipe%20Preview%3C/text%3E%3C/svg%3E";

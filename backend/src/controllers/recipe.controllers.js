@@ -3,18 +3,13 @@ const Recipe = require("../models/recipe.model");
 const Ingredient = require("../models/ingredient.model");
 
 function filesToImageUrls(files = []) {
-  return (files || [])
-    .map((f) => {
-      if (!f) return null;
-      return (
-        f.path ||
-        f.location ||
-        f.secure_url ||
-        f.path ||
-        (f.filename ? `/uploads/${f.filename}` : null)
-      );
-    })
-    .filter(Boolean);
+  if (!Array.isArray(files)) return [];
+
+  return files.map((f) => ({
+    url: f.path, 
+    publicId: f.filename,
+    originalName: f.originalname,
+  }));
 }
 
 async function resolveIngredients(recipeIngredients = []) {
