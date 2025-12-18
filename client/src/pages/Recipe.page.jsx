@@ -19,7 +19,7 @@ export default function Recipe() {
     const recipe = useSelector( ( state ) => selectRecipeById( state, id ) ?? null );
     const status = useSelector( selectRecipesStatus );
     const error = useSelector( selectRecipesError );
-
+    console.log( recipe )
     const [ imgIndex, setImgIndex ] = useState( 0 );
 
     useEffect( () => {

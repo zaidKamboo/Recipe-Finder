@@ -187,6 +187,71 @@ export default function EditRecipe() {
 
     // Normalize server recipe -> local form fields (strict to model fields)
     function setFormFromRecipe( recipe ) {
+        console.log( recipe, recipe.instructions 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        )
         setTitle( recipe.title ?? "" );
         setCategory( recipe.category ?? "" );
         setDescription( recipe.description ?? "" );
