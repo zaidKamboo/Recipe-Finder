@@ -48,5 +48,39 @@ function setTokenCookie(res, user) {
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 }
+const NON_VEG_KEYWORDS = [
+  "chicken",
+  "beef",
+  "mutton",
+  "pork",
+  "egg",
+  "eggs",
+  "fish",
+  "prawn",
+  "shrimp",
+  "crab",
+  "lamb",
+  "meat",
+  "bacon",
+  "sausage",
+  "turkey",
+];
 
-module.exports = { asyncHandler, wrapAsync, setTokenCookie };
+function detectVegFromIngredients(ingredients = []) {
+  if (!Array.isArray(ingredients)) return true;
+
+  return !ingredients.some((ing) => {
+    const name = ing?.ingredient?.name || ing?.name || "";
+
+    const lowerName = name.toLowerCase();
+
+    return NON_VEG_KEYWORDS.some((keyword) => lowerName.includes(keyword));
+  });
+}
+
+module.exports = {
+  asyncHandler,
+  wrapAsync,
+  setTokenCookie,
+  detectVegFromIngredients,
+};

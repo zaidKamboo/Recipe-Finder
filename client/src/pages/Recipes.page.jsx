@@ -1,138 +1,97 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { HiSearch, HiChevronLeft, HiChevronRight } from "react-icons/hi";
-import Footer from "../components/common/Footer.component";
+import { HiChevronLeft, HiChevronRight } from "react-icons/hi";
+
 import Navbar from "../components/common/Navbar.component";
+import Footer from "../components/common/Footer.component";
+
 import {
     fetchRecipes,
     selectAllRecipes,
     selectRecipesFetchStatus,
-    selectRecipesTotal,
 } from "../store/slices/recipes.slice";
 
+/* ------------------ helpers ------------------ */
 function makePlaceholder( title = "Recipe" ) {
     const svg = `
-    <svg xmlns='http://www.w3.org/2000/svg' width='1200' height='800' viewBox='0 0 1200 800'>
-      <rect width='100%' height='100%' fill='#120617'/>
-      <g fill='#ffd8b2' font-family='system-ui, Arial, sans-serif' text-anchor='middle'>
-        <text x='50%' y='45%' font-size='48' font-weight='700'>${encodeURIComponent(
-            title
-        )}</text>
-        <text x='50%' y='62%' font-size='22' fill='#f3e0d0' opacity='0.85'>Preview</text>
-      </g>
-    </svg>
-  `;
+  <svg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'>
+    <rect width='100%' height='100%' fill='#120617'/>
+    <g fill='#ffd8b2' font-family='system-ui' text-anchor='middle'>
+      <text x='50%' y='45%' font-size='48' font-weight='700'>${title}</text>
+      <text x='50%' y='62%' font-size='22' opacity='0.8'>Preview</text>
+    </g>
+  </svg>`;
     return `data:image/svg+xml;utf8,${encodeURIComponent( svg )}`;
 }
 
-/** Build an array of image URLs from recipe.images (objects or strings) + fallbacks */
 function getRecipeImages( recipe = {} ) {
     const urls = [];
 
     if ( Array.isArray( recipe.images ) ) {
-        for ( const img of recipe.images ) {
-            if ( !img ) continue;
-            if ( typeof img === "string" ) {
-                urls.push( img );
-            } else if ( typeof img === "object" ) {
-                if ( img.url ) urls.push( img.url );
-                else if ( img.path ) urls.push( img.path );
-            }
-        }
+        recipe.images.forEach( ( img ) => {
+            if ( typeof img === "string" ) urls.push( img );
+            else if ( img?.url ) urls.push( img.url );
+        } );
     }
 
-    if ( !urls.length && recipe.image ) urls.push( recipe.image );
-    if ( !urls.length && recipe.imageUrl ) urls.push( recipe.imageUrl );
-    if ( !urls.length ) urls.push( makePlaceholder( recipe.title || "Recipe" ) );
+    if ( !urls.length && recipe.image?.url ) urls.push( recipe.image.url );
+    if ( !urls.length ) urls.push( makePlaceholder( recipe.title ) );
 
     return urls;
 }
 
+/* ------------------ Recipe Card ------------------ */
 function RecipeCard( { recipe } ) {
     const slides = getRecipeImages( recipe );
     const [ index, setIndex ] = useState( 0 );
-    const [ paused, setPaused ] = useState( false );
     const intervalRef = useRef( null );
 
     useEffect( () => {
-        if ( paused || slides.length <= 1 ) return;
-        intervalRef.current = setInterval( () => {
-            setIndex( ( i ) => ( i + 1 ) % slides.length );
-        }, 3500 );
-        return () => {
-            if ( intervalRef.current ) clearInterval( intervalRef.current );
-        };
-    }, [ slides.length, paused ] );
-
-    const goPrev = () =>
-        setIndex( ( i ) => ( i - 1 + slides.length ) % slides.length );
-    const goNext = () => setIndex( ( i ) => ( i + 1 ) % slides.length );
+        if ( slides.length <= 1 ) return;
+        intervalRef.current = setInterval(
+            () => setIndex( ( i ) => ( i + 1 ) % slides.length ),
+            3500
+        );
+        return () => clearInterval( intervalRef.current );
+    }, [ slides.length ] );
 
     return (
-        <article className="rounded-2xl overflow-hidden border border-[#2b1e2b] bg-gradient-to-br from-[#0b0710] to-[#221322] shadow transform transition hover:-translate-y-1 hover:shadow-2xl">
-            {/* carousel */ }
-            <div
-                className="relative w-full h-48 sm:h-48 bg-purple-950/10"
-                onMouseEnter={ () => setPaused( true ) }
-                onMouseLeave={ () => setPaused( false ) }
+        <article className="relative rounded-2xl overflow-hidden border border-[#2b1e2b] bg-gradient-to-br from-[#0b0710] to-[#221322] shadow hover:-translate-y-1 hover:shadow-2xl transition">
+            <span
+                className={ `absolute top-3 right-3 z-20 px-3 py-1 rounded-full text-xs font-bold ${recipe.isVeg ? "bg-green-600" : "bg-red-600"
+                    } text-white` }
             >
+                { recipe.isVeg ? "🌱 Veg" : "🍗 Non-Veg" }
+            </span>
+
+            <div className="relative w-full h-48 bg-black/20">
                 { slides.map( ( src, i ) => (
                     <img
                         key={ i }
                         src={ src }
-                        alt={ `${recipe.title} ${i + 1}` }
-                        className={ `absolute inset-0 w-full h-full object-contain transition-opacity duration-700 ${i === index ? "opacity-100 z-10" : "opacity-0 z-0"
+                        alt={ recipe.title }
+                        className={ `absolute inset-0 w-full h-full object-contain transition-opacity duration-700 ${i === index ? "opacity-100" : "opacity-0"
                             }` }
                     />
                 ) ) }
-
-                { slides.length > 1 && (
-                    <>
-                        <button
-                            type="button"
-                            onClick={ goPrev }
-                            aria-label="Previous image"
-                            className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/50 text-white rounded-full w-8 h-8 flex items-center justify-center"
-                        >
-                            ‹
-                        </button>
-                        <button
-                            type="button"
-                            onClick={ goNext }
-                            aria-label="Next image"
-                            className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/50 text-white rounded-full w-8 h-8 flex items-center justify-center"
-                        >
-                            ›
-                        </button>
-                        <div className="absolute left-1/2 -translate-x-1/2 bottom-2 flex items-center gap-2">
-                            { slides.map( ( _, dotIdx ) => (
-                                <button
-                                    key={ dotIdx }
-                                    type="button"
-                                    onClick={ () => setIndex( dotIdx ) }
-                                    aria-label={ `Go to slide ${dotIdx + 1}` }
-                                    className={ `w-2 h-2 rounded-full ${dotIdx === index ? "bg-white" : "bg-white/40"
-                                        }` }
-                                />
-                            ) ) }
-                        </div>
-                    </>
-                ) }
             </div>
 
-            {/* content */ }
             <div className="p-4">
                 <h3 className="text-lg font-semibold text-orange-300">
                     { recipe.title }
                 </h3>
-                <p className="mt-1 text-sm text-slate-300">{ recipe.description }</p>
+
+                <p className="mt-1 text-sm text-slate-300 line-clamp-2">
+                    { recipe.description }
+                </p>
 
                 <div className="mt-3 flex items-center justify-between">
-                    <div className="text-xs text-slate-400">{ recipe.category }</div>
+                    <span className="text-xs text-slate-400">{ recipe.category }</span>
+
                     <Link
-                        to={ `/recipes/${recipe.id ?? recipe._id}` }
-                        className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-br from-[#ff7a1a] to-[#ff3b00] text-black text-sm font-semibold"
+                        to={ `/recipes/${recipe.id}` }
+                        className="px-3 py-1 rounded-full bg-gradient-to-br from-orange-500 to-orange-700 text-black text-sm font-semibold"
                     >
                         View
                     </Link>
@@ -142,269 +101,175 @@ function RecipeCard( { recipe } ) {
     );
 }
 
+/* ------------------ Page ------------------ */
 export default function RecipesPage() {
     const dispatch = useDispatch();
-    const location = useLocation();
-    const navigate = useNavigate();
 
-    const storeRecipes = useSelector( selectAllRecipes );
+    const recipes = useSelector( selectAllRecipes );
     const fetchStatus = useSelector( selectRecipesFetchStatus );
-    const totalFromStore = useSelector( selectRecipesTotal );
+    console.log( recipes )
+    const [ q, setQ ] = useState( "" );
+    const [ category, setCategory ] = useState( "all" );
+    const [ diet, setDiet ] = useState( "any" );
+    const [ page, setPage ] = useState( 1 );
+    const [ pageSize, setPageSize ] = useState( 6 );
 
-    const qs = useMemo(
-        () => new URLSearchParams( location.search ),
-        [ location.search ]
-    );
-
-    const [ q, setQ ] = useState( qs.get( "q" ) ?? "" );
-    const [ category, setCategory ] = useState( qs.get( "category" ) ?? "all" );
-    const [ sort, setSort ] = useState( qs.get( "sort" ) ?? "newest" );
-    const [ diet, setDiet ] = useState( qs.get( "diet" ) ?? "any" );
-    const [ page, setPage ] = useState( Number( qs.get( "page" ) ?? 1 ) );
-    const [ pageSize, setPageSize ] = useState(
-        Number( qs.get( "pageSize" ) ?? 6 )
-    );
-
-    // keep local state in sync with URL
+    /* -------- fetch ALL recipes ONCE -------- */
     useEffect( () => {
-        setQ( qs.get( "q" ) ?? "" );
-        setCategory( qs.get( "category" ) ?? "all" );
-        setSort( qs.get( "sort" ) ?? "newest" );
-        setDiet( qs.get( "diet" ) ?? "any" );
-        setPage( Number( qs.get( "page" ) ?? 1 ) );
-        setPageSize( Number( qs.get( "pageSize" ) ?? 6 ) );
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [ location.search ] );
+        dispatch( fetchRecipes() );
+    }, [ dispatch ] );
 
-    // sync URL + fetch from API (server-side pagination)
+    /* -------- reset page on filter change -------- */
     useEffect( () => {
-        const params = new URLSearchParams();
-        if ( q && q.trim() ) params.set( "q", q.trim() );
-        if ( category && category !== "all" ) params.set( "category", category );
-        if ( sort && sort !== "newest" ) params.set( "sort", sort );
-        if ( diet && diet !== "any" ) params.set( "diet", diet );
-        if ( page && page > 1 ) params.set( "page", String( page ) );
-        if ( pageSize && pageSize !== 6 ) params.set( "pageSize", String( pageSize ) );
+        setPage( 1 );
+    }, [ q, category, diet, pageSize ] );
 
-        const search = params.toString();
-        navigate(
-            {
-                pathname: location.pathname,
-                search: search ? `?${search}` : "",
-            },
-            { replace: true }
-        );
-
-        const fetchParams = {
-            page,
-            pageSize,
-        };
-        if ( q && q.trim() ) fetchParams.q = q.trim();
-        if ( category && category !== "all" ) fetchParams.category = category;
-        if ( sort ) fetchParams.sort = sort;
-        if ( diet && diet !== "any" ) fetchParams.diet = diet;
-
-        dispatch( fetchRecipes( fetchParams ) );
-    }, [
-        dispatch,
-        q,
-        category,
-        sort,
-        diet,
-        page,
-        pageSize,
-        navigate,
-        location.pathname,
-    ] );
-
-    // apply *client-side* filters/sort to the current page from server
+    /* -------- FILTER (title + desc + ingredients) -------- */
     const filtered = useMemo( () => {
-        const list = Array.isArray( storeRecipes ) ? storeRecipes.slice() : [];
-        if ( !list.length ) return [];
-        let out = list;
+        let out = [ ...recipes ];
 
-        if ( category && category !== "all" ) {
+        if ( q.trim() ) {
+            const query = q.toLowerCase();
+            out = out.filter( ( r ) => {
+                const inTitle = r.title?.toLowerCase().includes( query );
+                const inDesc = r.description?.toLowerCase().includes( query );
+                const inIngredients =
+                    Array.isArray( r.ingredients ) &&
+                    r.ingredients.some( ( ing ) =>
+                        ing?.name?.toLowerCase().includes( query )
+                    );
+                return inTitle || inDesc || inIngredients;
+            } );
+        }
+
+        if ( category !== "all" ) {
             out = out.filter(
-                ( r ) =>
-                    ( r.category || "" ).toLowerCase() === category.toLowerCase()
+                ( r ) => r.category?.toLowerCase() === category.toLowerCase()
             );
         }
-        if ( diet && diet !== "any" ) {
-            if ( diet === "vegetarian" )
-                out = out.filter(
-                    ( r ) => ( r.category || "" ).toLowerCase() === "vegetarian"
-                );
-            if ( diet === "nonveg" )
-                out = out.filter(
-                    ( r ) => ( r.category || "" ).toLowerCase() === "nonveg"
-                );
-        }
-        if ( q && q.trim() ) {
-            const term = q.trim().toLowerCase();
+
+        if ( diet !== "any" ) {
             out = out.filter(
-                ( r ) =>
-                    ( r.title || "" ).toLowerCase().includes( term ) ||
-                    ( r.description || "" ).toLowerCase().includes( term ) ||
-                    ( r.category || "" ).toLowerCase().includes( term )
+                ( r ) => r.diet?.toLowerCase() === diet.toLowerCase()
             );
         }
-        if ( sort === "popular" )
-            out.sort( ( a, b ) => ( b.popularity || 0 ) - ( a.popularity || 0 ) );
+
         return out;
-    }, [ storeRecipes, category, q, sort, diet ] );
+    }, [ recipes, q, category, diet ] );
 
-    // ✅ total comes from backend; current page items are just `filtered`
-    const total =
-        Number( totalFromStore ) > 0 ? totalFromStore : filtered.length;
+    /* -------- PAGINATION (FIXED) -------- */
+    const total = filtered.length;
     const pages = Math.max( 1, Math.ceil( total / pageSize ) );
-    const pageItems = filtered; // ← no second slice here
 
-    function gotoPage( n ) {
-        const p = Math.max( 1, Math.min( pages, n ) );
-        setPage( p );
-        window.scrollTo( { top: 0, behavior: "smooth" } );
-    }
+    const paginatedRecipes = useMemo( () => {
+        const start = ( page - 1 ) * pageSize;
+        return filtered.slice( start, start + pageSize );
+    }, [ filtered, page, pageSize ] );
 
-    const setAndReset =
-        ( setter ) =>
-            ( val ) => {
-                setter( val );
-                setPage( 1 );
-            };
+    const pageNumbers = useMemo( () => {
+        const delta = 2;
+        const start = Math.max( 1, page - delta );
+        const end = Math.min( pages, page + delta );
+        return Array.from( { length: end - start + 1 }, ( _, i ) => start + i );
+    }, [ page, pages ] );
 
-    const isLoading = fetchStatus === "loading";
-    const hasAnyServerData =
-        Array.isArray( storeRecipes ) && storeRecipes.length > 0;
-    const hasPageItems = pageItems.length > 0;
+    /* -------- dynamic categories -------- */
+    const categories = useMemo( () => {
+        const set = new Set();
+        recipes.forEach( ( r ) => r.category && set.add( r.category ) );
+        return [ "all", ...Array.from( set ) ];
+    }, [ recipes ] );
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-[#06040a] via-[#120617] to-[#24122a] text-slate-100 transition-colors">
+        <div className="min-h-screen bg-gradient-to-b from-[#06040a] via-[#120617] to-[#24122a] text-slate-100">
             <Navbar />
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-8">
-                <div className="flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between mb-6">
-                    <div className="flex-1 min-w-0">
-                        <label className="relative w-full">
-                            <input
-                                type="search"
-                                placeholder="Search recipes..."
-                                value={ q }
-                                onChange={ ( e ) => setAndReset( setQ )( e.target.value ) }
-                                className="w-full pl-10 pr-4 py-2 rounded-full bg-[#0b0710] border border-[#2b1e2b] text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-400"
-                                aria-label="Search recipes"
-                            />
-                            <HiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-                        </label>
-                    </div>
 
-                    <div className="flex flex-wrap items-center gap-3">
-                        <select
-                            value={ category }
-                            onChange={ ( e ) => setAndReset( setCategory )( e.target.value ) }
-                            className="rounded-full bg-[#0b0710] border border-[#2b1e2b] text-slate-100 px-3 py-2"
-                        >
-                            <option value="all">All</option>
-                            <option value="breakfast">Breakfast</option>
-                            <option value="quick">Quick & Easy</option>
-                            <option value="vegetarian">Vegetarian</option>
-                            <option value="dessert">Dessert</option>
-                            <option value="fastfood">Fast Food</option>
-                            <option value="asian">Asian</option>
-                            <option value="nonveg">Non-Veg</option>
-                            <option value="seasonal">Seasonal</option>
-                        </select>
+            <div className="max-w-7xl mx-auto px-4 pt-20 pb-10">
+                {/* filters */ }
+                <div className="flex flex-wrap gap-3 mb-6">
+                    <input
+                        value={ q }
+                        onChange={ ( e ) => setQ( e.target.value ) }
+                        placeholder="Search recipe or ingredient (e.g. tomato, garlic)"
+                        className="flex-1 px-4 py-2 rounded-full bg-[#0b0710] border border-[#2b1e2b]"
+                    />
 
-                        <select
-                            value={ diet }
-                            onChange={ ( e ) => setAndReset( setDiet )( e.target.value ) }
-                            className="rounded-full bg-[#0b0710] border border-[#2b1e2b] text-slate-100 px-3 py-2"
-                        >
-                            <option value="any">Any</option>
-                            <option value="vegetarian">Vegetarian</option>
-                            <option value="nonveg">Non-Veg</option>
-                        </select>
+                    <select
+                        value={ category }
+                        onChange={ ( e ) => setCategory( e.target.value ) }
+                        className="px-3 py-2 rounded-full bg-[#0b0710] border border-[#2b1e2b]"
+                    >
+                        { categories.map( ( c ) => (
+                            <option key={ c } value={ c }>
+                                { c }
+                            </option>
+                        ) ) }
+                    </select>
 
-                        <select
-                            value={ sort }
-                            onChange={ ( e ) => setAndReset( setSort )( e.target.value ) }
-                            className="rounded-full bg-[#0b0710] border border-[#2b1e2b] text-slate-100 px-3 py-2"
-                        >
-                            <option value="newest">Newest</option>
-                            <option value="popular">Most popular</option>
-                        </select>
-                    </div>
+                    <select
+                        value={ diet }
+                        onChange={ ( e ) => setDiet( e.target.value ) }
+                        className="px-3 py-2 rounded-full bg-[#0b0710] border border-[#2b1e2b]"
+                    >
+                        <option value="any">Any</option>
+                        <option value="veg">🌱 Veg</option>
+                        <option value="nonveg">🍗 Non-Veg</option>
+                    </select>
+
+                    <select
+                        value={ pageSize }
+                        onChange={ ( e ) => setPageSize( Number( e.target.value ) ) }
+                        className="px-3 py-2 rounded-full bg-[#0b0710] border border-[#2b1e2b]"
+                    >
+                        <option value={ 6 }>6 / page</option>
+                        <option value={ 9 }>9 / page</option>
+                        <option value={ 12 }>12 / page</option>
+                        <option value={ 24 }>24 / page</option>
+                    </select>
                 </div>
 
-                { isLoading ? (
-                    <div className="py-24 flex items-center justify-center">
-                        <div className="w-12 h-12 rounded-full border-4 border-t-transparent border-orange-500 animate-spin" />
-                    </div>
-                ) : hasPageItems ? (
+                {/* content */ }
+                { fetchStatus === "loading" ? (
+                    <div className="py-24 text-center">Loading…</div>
+                ) : paginatedRecipes.length ? (
                     <>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                            { pageItems.map( ( r ) => (
-                                <RecipeCard key={ r.id ?? r._id } recipe={ r } />
+                                { paginatedRecipes.map( ( r ) => (
+                                    <RecipeCard key={ r.id } recipe={ r } />
                             ) ) }
                         </div>
 
-                            <div className="mt-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                                <div className="flex items-center gap-3">
+                            {/* pagination */ }
+                            <div className="mt-10 flex items-center justify-center gap-2">
+                                <button disabled={ page === 1 } onClick={ () => setPage( page - 1 ) }>
+                                    <HiChevronLeft />
+                                </button>
+
+                                { pageNumbers.map( ( p ) => (
                                     <button
-                                        onClick={ () => gotoPage( page - 1 ) }
-                                        disabled={ page <= 1 }
-                                        className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-[#0b0710] border border-[#2b1e2b] text-slate-100 disabled:opacity-50"
+                                        key={ p }
+                                        onClick={ () => setPage( p ) }
+                                        className={ `px-3 py-1 rounded-full border ${p === page
+                                            ? "bg-orange-500 text-black"
+                                            : "border-[#2b1e2b]"
+                                            }` }
                                     >
-                                        <HiChevronLeft className="w-5 h-5" /> Prev
+                                        { p }
                                     </button>
+                                ) ) }
 
-                                    <div className="flex items-center gap-2 text-sm text-slate-300">
-                                        Page{ " " }
-                                        <strong className="mx-2">
-                                            { page }
-                                        </strong>{ " " }
-                                        of { pages }
-                                    </div>
-
-                                    <button
-                                        onClick={ () => gotoPage( page + 1 ) }
-                                        disabled={ page >= pages }
-                                        className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-[#0b0710] border border-[#2b1e2b] text-slate-100 disabled:opacity-50"
-                                    >
-                                        Next{ " " }
-                                        <HiChevronRight className="w-5 h-5" />
-                                    </button>
-                                </div>
-
-                                <div className="flex items-center gap-2 text-sm text-slate-300">
-                                    <label className="flex items-center gap-2">
-                                        <span className="text-slate-300">Per page</span>
-                                        <select
-                                            value={ pageSize }
-                                            onChange={ ( e ) => {
-                                                setPageSize( Number( e.target.value ) );
-                                                setPage( 1 );
-                                            } }
-                                            className="rounded-full bg-[#0b0710] border border-[#2b1e2b] text-slate-100 px-2 py-1"
-                                        >
-                                            <option value={ 6 }>6</option>
-                                            <option value={ 9 }>9</option>
-                                            <option value={ 12 }>12</option>
-                                        </select>
-                                    </label>
-
-                                    <span className="text-slate-500">• { total } results</span>
-                                </div>
+                                <button disabled={ page === pages } onClick={ () => setPage( page + 1 ) }>
+                                    <HiChevronRight />
+                                </button>
                             </div>
-                    </>
-                    ) : hasAnyServerData ? (
-                        <div className="py-24 text-center text-slate-400">
-                            No recipes found. Try another search or clear filters.
-                        </div>
+                        </>
                 ) : (
-                                <div className="py-24 text-center text-slate-400">
-                                    No recipes yet. Try refreshing or change filters.
-                                </div>
+                            <div className="py-24 text-center text-slate-400">
+                                No recipes found
+                            </div>
                 ) }
             </div>
+
             <Footer />
         </div>
     );

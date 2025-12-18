@@ -1,5 +1,9 @@
-import React, { useEffect, useRef } from "react";
-import { HiOutlineSearch, HiOutlineHeart, HiOutlineFire } from "react-icons/hi";
+import React from "react";
+import {
+    HiOutlineSearch,
+    HiOutlineHeart,
+    HiOutlineFire,
+} from "react-icons/hi";
 
 const STEPS = [
     {
@@ -22,138 +26,16 @@ const STEPS = [
     },
 ];
 
-export default function HowItWorks( { enableAnimations = true } = {} ) {
-    const sectionRef = useRef( null );
-    const gsapCtxRef = useRef( null );
-
-    useEffect( () => {
-        if ( !enableAnimations ) return;
-
-        let gsapInstance;
-        let ScrollTrigger;
-
-        ( async () => {
-            try {
-                const gsapModule = await import( "gsap" );
-                const stModule = await import( "gsap/ScrollTrigger" );
-
-                gsapInstance = gsapModule.default ?? gsapModule;
-                ScrollTrigger = stModule.ScrollTrigger || stModule.default;
-
-                if ( !gsapInstance || !ScrollTrigger ) return;
-                gsapInstance.registerPlugin( ScrollTrigger );
-
-                const section = sectionRef.current;
-                if ( !section ) return;
-
-                const ctx = gsapInstance.context( () => {
-                    const stepCards = gsapInstance.utils.toArray( "[data-how-step]" );
-                    const lineEl = section.querySelector( "[data-how-line]" );
-
-                    // SECTION container: fade + move with scroll
-                    gsapInstance.fromTo(
-                        section,
-                        {
-                            opacity: 0,
-                            y: 80,
-                            scale: 0.96,
-                        },
-                        {
-                            opacity: 1,
-                            y: 0,
-                            scale: 1,
-                            ease: "power2.out",
-                            scrollTrigger: {
-                                trigger: section,
-                                start: "top 80%",
-                                end: "bottom 40%",
-                                scrub: 0.6,
-                            },
-                        }
-                    );
-
-                    // Vertical (or horizontal) line "grows" with scroll
-                    if ( lineEl ) {
-                        gsapInstance.fromTo(
-                            lineEl,
-                            { scaleY: 0, opacity: 0 },
-                            {
-                                scaleY: 1,
-                                opacity: 1,
-                                transformOrigin: "top center",
-                                ease: "power2.out",
-                                scrollTrigger: {
-                                    trigger: section,
-                                    start: "top 78%",
-                                    end: "bottom 40%",
-                                    scrub: 0.7,
-                                },
-                            }
-                        );
-                    }
-
-                    // Steps: staggered fade + slide, tied to scroll
-                    if ( stepCards.length ) {
-                        gsapInstance.from( stepCards, {
-                            opacity: 0,
-                            y: 40,
-                            scale: 0.97,
-                            ease: "power3.out",
-                            stagger: {
-                                each: 0.18,
-                                from: "start",
-                            },
-                            scrollTrigger: {
-                                trigger: section,
-                                start: "top 78%",
-                                end: "bottom 35%",
-                                scrub: 0.8,
-                            },
-                        } );
-
-                        // Optional: subtle "active step" effect when center of viewport hits each card
-                        stepCards.forEach( ( el ) => {
-                            gsapInstance.to( el, {
-                                boxShadow: "0 0 24px rgba(255,122,26,0.25)",
-                                borderColor: "#ff7a1a",
-                                y: -6,
-                                ease: "power2.out",
-                                scrollTrigger: {
-                                    trigger: el,
-                                    start: "center 70%", // when step card hits upper-middle
-                                    end: "center 40%",
-                                    scrub: true,
-                                },
-                            } );
-                        } );
-                    }
-                }, section );
-
-                gsapCtxRef.current = ctx;
-            } catch ( err ) {
-                console.error( "HowItWorks GSAP error:", err );
-            }
-        } )();
-
-        return () => {
-            try {
-                gsapCtxRef.current?.revert?.();
-            } catch {
-                // ignore
-            }
-        };
-    }, [ enableAnimations ] );
-
+export default function HowItWorks() {
     return (
         <section
-            ref={ sectionRef }
             className="
-        relative
-        rounded-2xl p-6 sm:p-8
-        bg-gradient-to-br from-[#08050a] via-[#140716] to-[#221322]
-        border border-[#2b1e2b] shadow-xl text-slate-100
-        overflow-hidden
-      "
+                relative
+                rounded-2xl p-6 sm:p-8
+                bg-gradient-to-br from-[#08050a] via-[#140716] to-[#221322]
+                border border-[#2b1e2b] shadow-xl text-slate-100
+                overflow-hidden
+            "
         >
             {/* soft background glow */ }
             <div
@@ -178,47 +60,36 @@ export default function HowItWorks( { enableAnimations = true } = {} ) {
             </div>
 
             <div className="relative">
-                {/* connecting line (vertical on mobile, horizontal on lg) */ }
+                {/* connecting line */ }
                 <div
-                    data-how-line
                     className="
-            hidden sm:block
-            absolute left-4 sm:left-1/2 sm:-translate-x-1/2 top-6 bottom-6
-            lg:left-[18%] lg:right-[18%] lg:top-1/2 lg:-translate-y-1/2
-            bg-gradient-to-b sm:bg-gradient-to-b lg:bg-gradient-to-r
-            from-[#ff7a1a] via-[#ffb48a] to-[#ff7a1a]
-            opacity-70
-          "
-                    style={ {
-                        width: "2px",
-                        // For large screens, make it horizontal instead
-                        height: "auto",
-                    } }
+                        hidden sm:block
+                        absolute left-4 sm:left-1/2 sm:-translate-x-1/2 top-6 bottom-6
+                        lg:left-[18%] lg:right-[18%] lg:top-1/2 lg:-translate-y-1/2
+                        bg-gradient-to-b sm:bg-gradient-to-b lg:bg-gradient-to-r
+                        from-[#ff7a1a] via-[#ffb48a] to-[#ff7a1a]
+                        opacity-70
+                    "
+                    style={ { width: "2px" } }
                 />
 
-                <div
-                    className="
-            grid grid-cols-1 lg:grid-cols-3 gap-6 relative
-          "
-                >
-                    { STEPS.map( ( step, idx ) => {
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 relative">
+                    { STEPS.map( ( step ) => {
                         const Icon = step.icon;
                         return (
                             <div
                                 key={ step.id }
-                                data-how-step
                                 className="
-                  relative
-                  flex items-start gap-3 sm:gap-4
-                  lg:flex-col lg:items-start
-                  p-4 sm:p-5
-                  rounded-2xl
-                  bg-[rgba(7,6,10,0.92)]
-                  border border-[#2b1e2b]
-                  transition-transform transition-shadow
-                "
+                                    relative
+                                    flex items-start gap-3 sm:gap-4
+                                    lg:flex-col lg:items-start
+                                    p-4 sm:p-5
+                                    rounded-2xl
+                                    bg-[rgba(7,6,10,0.92)]
+                                    border border-[#2b1e2b]
+                                "
                             >
-                                {/* step marker / number */ }
+                                {/* step number */ }
                                 <div className="flex flex-col items-center mr-2 lg:mr-0">
                                     <div className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-[#160a11] border border-[#3a2333] text-xs sm:text-sm text-orange-300 font-semibold">
                                         { String( step.id ).padStart( 2, "0" ) }

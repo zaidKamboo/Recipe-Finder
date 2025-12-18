@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
 import {
     GiCroissant,
@@ -22,118 +22,9 @@ const CATEGORIES = [
     { key: "baking", label: "Baking", icon: GiPieSlice },
 ];
 
-export default function Categories( { enableAnimations = true } = {} ) {
-    const sectionRef = useRef( null );
-    const gsapCtxRef = useRef( null );
-
-    useEffect( () => {
-        if ( !enableAnimations ) return;
-
-        let gsapInstance;
-        let ScrollTrigger;
-
-        ( async () => {
-            try {
-                const gsapModule = await import( "gsap" );
-                const stModule = await import( "gsap/ScrollTrigger" );
-
-                gsapInstance = gsapModule.default ?? gsapModule;
-                ScrollTrigger = stModule.ScrollTrigger || stModule.default;
-
-                if ( !gsapInstance || !ScrollTrigger ) return;
-                gsapInstance.registerPlugin( ScrollTrigger );
-
-                const section = sectionRef.current;
-                if ( !section ) return;
-
-                const ctx = gsapInstance.context( () => {
-                    const cards = gsapInstance.utils.toArray(
-                        "[data-category-card]"
-                    );
-
-                    if ( !cards.length ) return;
-
-                    // SECTION: fade + move in/out with scroll
-                    gsapInstance.fromTo(
-                        section,
-                        {
-                            opacity: 0,
-                            y: 80,
-                            scale: 0.96,
-                        },
-                        {
-                            opacity: 1,
-                            y: 0,
-                            scale: 1,
-                            ease: "power2.out",
-                            scrollTrigger: {
-                                trigger: section,
-                                start: "top 80%",   // start anim when top is near bottom of viewport
-                                end: "bottom 40%",  // done anim when bottom is near middle
-                                scrub: 0.5,         // tie progress to scroll (smooth)
-                            },
-                        }
-                    );
-
-                    // CARDS: staggered fade/slide in, reversed on scroll up
-                    gsapInstance.from( cards, {
-                        opacity: 0,
-                        y: 40,
-                        scale: 0.96,
-                        ease: "power3.out",
-                        stagger: {
-                            each: 0.15,
-                            from: "start",
-                        },
-                        scrollTrigger: {
-                            trigger: section,
-                            start: "top 78%",
-                            end: "bottom 35%",
-                            scrub: 0.7,
-                        },
-                    } );
-
-                    // Soft border / glow that intensifies as you scroll over the section
-                    gsapInstance.fromTo(
-                        section,
-                        {
-                            boxShadow: "0 0 0 rgba(255,122,26,0)",
-                            borderColor: "#2b1e2b",
-                        },
-                        {
-                            boxShadow: "0 0 28px rgba(255,122,26,0.32)",
-                            borderColor: "#ff7a1a",
-                            ease: "sine.inOut",
-                            scrollTrigger: {
-                                trigger: section,
-                                start: "top 85%",
-                                end: "bottom 30%",
-                                scrub: 1,
-                            },
-                        }
-                    );
-                }, section );
-
-                gsapCtxRef.current = ctx;
-            } catch ( err ) {
-                // silent fail
-                console.error( "Categories GSAP error:", err );
-            }
-        } )();
-
-        return () => {
-            // Clean up all animations & ScrollTriggers for this component
-            try {
-                gsapCtxRef.current?.revert?.();
-            } catch {
-                // ignore
-            }
-        };
-    }, [ enableAnimations ] );
-
+export default function Categories() {
     return (
         <div
-            ref={ sectionRef }
             className="
                 relative
                 rounded-2xl p-6 
@@ -142,7 +33,7 @@ export default function Categories( { enableAnimations = true } = {} ) {
                 overflow-hidden
             "
         >
-            {/* Soft inner glow accent */ }
+            {/* Soft inner glow */ }
             <div
                 className="pointer-events-none absolute inset-0 opacity-40"
                 style={ {
@@ -165,13 +56,11 @@ export default function Categories( { enableAnimations = true } = {} ) {
                         <Link
                             key={ c.key }
                             to={ `/recipes?category=${c.key}` }
-                            data-category-card
                             className="
                                 group flex flex-col items-start p-4 rounded-xl 
                                 bg-gradient-to-br from-[#0b0710] to-[#221322] 
-                                border border-[#2b1e2b] shadow-md transition 
-                                hover:-translate-y-1.5 hover:shadow-2xl hover:border-[#ff7a1a]
-                                hover:scale-[1.02]
+                                border border-[#2b1e2b] shadow-md
+                                hover:border-[#ff7a1a]
                             "
                         >
                             <div className="flex items-center gap-3">
@@ -183,7 +72,7 @@ export default function Categories( { enableAnimations = true } = {} ) {
                                 </span>
                             </div>
 
-                            <div className="mt-2 text-xs text-slate-400 group-hover:text-orange-300 transition">
+                            <div className="mt-2 text-xs text-slate-400 group-hover:text-orange-300">
                                 Popular choices · Explore now
                             </div>
                         </Link>
