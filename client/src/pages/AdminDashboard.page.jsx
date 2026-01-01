@@ -143,7 +143,7 @@ export default function AdminDashboard() {
         <div className="min-h-screen bg-gradient-to-b from-[#06040a] via-[#120617] to-[#24122a] text-slate-100">
             <Navbar />
 
-            <main className="pt-24 pb-12 max-w-7xl mx-auto px-4 space-y-6">
+            <main className="pt-24 pb-2 max-w-7xl mx-auto px-4 space-y-6 mb-1">
                 {/* top bar */ }
                 <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>

@@ -6,12 +6,6 @@ const ingredientSchema = new mongoose.Schema(
     name: { type: String, required: true, index: true },
     synonyms: [String],
     category: String,
-    nutrition: {
-      calories: Number,
-      protein: Number,
-      carbs: Number,
-      fat: Number,
-    },
   },
   { timestamps: true }
 );
